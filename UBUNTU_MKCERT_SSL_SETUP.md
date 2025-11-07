@@ -19,21 +19,105 @@ This guide shows you how to set up **secure HTTPS** for your Django app on a **l
 ## Prerequisites
 
 - **Ubuntu Server** (20.04/22.04/24.04) with sudo access
-- **Nginx** installed and configured as a reverse proxy for Gunicorn
-- **Django app** running on Gunicorn (systemd service or manual)
+- **Django app** code deployed (follow [UBUNTU_INSTALL.md](./UBUNTU_INSTALL.md) for initial setup)
+- **Python virtual environment** with dependencies installed
 - Devices on the same network that will access the app (Windows PCs, Android/iOS devices)
 
 ---
 
 ## Part 1: Server Setup (Ubuntu)
 
-### 1) Install mkcert on Ubuntu Server
+### 1) Install Nginx and dependencies
 
 ```bash
-# Install dependencies
+# Update package list
 sudo apt update
-sudo apt install -y wget libnss3-tools
 
+# Install Nginx, Python, and required tools
+sudo apt install -y nginx python3-pip python3-venv wget libnss3-tools
+
+# Start and enable Nginx
+sudo systemctl start nginx
+sudo systemctl enable nginx
+
+# Check status
+sudo systemctl status nginx
+```
+
+### 2) Install Gunicorn in your virtual environment
+
+```bash
+# Navigate to your project directory
+cd /path/to/your/project
+
+# Activate virtual environment
+source venv/bin/activate
+
+# Install Gunicorn
+pip install gunicorn
+
+# Test Gunicorn (optional - stop with Ctrl+C)
+gunicorn --bind 0.0.0.0:8000 core.wsgi:application
+```
+
+### 3) Create Gunicorn systemd service
+
+Create `/etc/systemd/system/gunicorn.service`:
+
+```bash
+sudo nano /etc/systemd/system/gunicorn.service
+```
+
+Add the following content (adjust paths to match your setup):
+
+```ini
+[Unit]
+Description=gunicorn daemon for armguard
+After=network.target
+
+[Service]
+User=www-data
+Group=www-data
+WorkingDirectory=/home/your-username/armguard
+Environment="PATH=/home/your-username/armguard/venv/bin"
+ExecStart=/home/your-username/armguard/venv/bin/gunicorn \
+          --workers 3 \
+          --bind unix:/run/gunicorn.sock \
+          core.wsgi:application
+
+[Install]
+WantedBy=multi-user.target
+```
+
+**Important**: Replace `/home/your-username/armguard` with your actual project path.
+
+Create the socket directory and set permissions:
+
+```bash
+# Create socket directory
+sudo mkdir -p /run/gunicorn
+
+# Set ownership
+sudo chown www-data:www-data /run/gunicorn
+
+# Give project directory access to www-data
+sudo chown -R www-data:www-data /path/to/your/project
+
+# Start and enable Gunicorn
+sudo systemctl daemon-reload
+sudo systemctl start gunicorn
+sudo systemctl enable gunicorn
+
+# Check status
+sudo systemctl status gunicorn
+
+# Verify socket created
+ls -l /run/gunicorn.sock
+```
+
+### 4) Install mkcert
+
+```bash
 # Download and install mkcert (latest version - check GitHub for updates)
 wget https://github.com/FiloSottile/mkcert/releases/download/v1.4.4/mkcert-v1.4.4-linux-amd64
 sudo mv mkcert-v1.4.4-linux-amd64 /usr/local/bin/mkcert
@@ -43,7 +127,7 @@ sudo chmod +x /usr/local/bin/mkcert
 mkcert -version
 ```
 
-### 2) Create a local Certificate Authority (CA)
+### 5) Create a local Certificate Authority (CA)
 
 ```bash
 # Generate the local CA (creates rootCA.pem and rootCA-key.pem in ~/.local/share/mkcert)
@@ -55,7 +139,7 @@ mkcert -CAROOT
 
 **Important**: The CA certificate file is located at `~/.local/share/mkcert/rootCA.pem`. You will copy this file to client devices later.
 
-### 3) Generate SSL certificate for your LAN IP or hostname
+### 6) Generate SSL certificate for your LAN IP or hostname
 
 Choose **one** of the following based on how you'll access the app:
 
@@ -80,7 +164,7 @@ This creates two files in the current directory:
 - `192.168.1.100+2.pem` (or similar name) - the certificate
 - `192.168.1.100+2-key.pem` - the private key
 
-### 4) Move certificates to a secure location
+### 7) Move certificates to a secure location
 
 ```bash
 # Create SSL directory
@@ -99,9 +183,15 @@ sudo chown root:root /etc/ssl/armguard/*
 ls -lh /etc/ssl/armguard/
 ```
 
-### 5) Configure Nginx for HTTPS
+### 8) Configure Nginx for HTTPS
 
 Edit your Nginx server block (e.g., `/etc/nginx/sites-available/armguard`):
+
+```bash
+sudo nano /etc/nginx/sites-available/armguard
+```
+
+Add the following configuration (replace IP/hostname and paths as needed):
 
 ```nginx
 # Redirect HTTP to HTTPS
@@ -157,12 +247,35 @@ server {
 Enable the site and test:
 
 ```bash
+# Remove default site (optional)
+sudo rm /etc/nginx/sites-enabled/default
+
+# Enable your site
 sudo ln -sf /etc/nginx/sites-available/armguard /etc/nginx/sites-enabled/
+
+# Test configuration
 sudo nginx -t
+
+# Reload Nginx
 sudo systemctl reload nginx
 ```
 
-### 6) Update Django settings
+### 9) Configure firewall (ufw)
+
+```bash
+# Allow HTTP and HTTPS
+sudo ufw allow 80/tcp
+sudo ufw allow 443/tcp
+sudo ufw allow OpenSSH
+
+# Enable firewall
+sudo ufw enable
+
+# Check status
+sudo ufw status
+```
+
+### 10) Update Django settings
 
 In `core/settings.py`, ensure these are set:
 
@@ -178,10 +291,35 @@ CSRF_COOKIE_SECURE = True
 SECURE_HSTS_SECONDS = 31536000  # 1 year
 ```
 
-Restart Gunicorn:
+Collect static files and restart Gunicorn:
 
 ```bash
+# Activate virtual environment
+source /path/to/your/project/venv/bin/activate
+
+# Collect static files
+python manage.py collectstatic --noinput
+
+# Restart Gunicorn
 sudo systemctl restart gunicorn
+
+# Check logs if issues occur
+sudo journalctl -u gunicorn -f
+```
+
+### 11) Verify the deployment
+
+```bash
+# Check all services are running
+sudo systemctl status nginx
+sudo systemctl status gunicorn
+
+# Test HTTPS locally from the server
+curl -I https://192.168.1.100
+
+# Check Nginx logs if needed
+sudo tail -f /var/log/nginx/error.log
+sudo tail -f /var/log/nginx/access.log
 ```
 
 ---
@@ -310,30 +448,6 @@ For Firefox specifically:
 
 ---
 
-## Part 3: Testing and Verification
-
-### On the server:
-```bash
-# Test Nginx SSL configuration
-sudo nginx -t
-
-# Check certificate details
-openssl x509 -in /etc/ssl/armguard/192.168.1.100+2.pem -text -noout
-
-# Test HTTPS locally
-curl -I https://192.168.1.100
-```
-
-### On client devices:
-1. Open browser and navigate to `https://192.168.1.100` (or your hostname)
-2. Verify:
-   - ✅ Green padlock appears
-   - ✅ No certificate warnings
-   - ✅ Site loads properly
-3. Click the padlock → **Certificate** → Verify issuer is "mkcert"
-
----
-
 ## Troubleshooting
 
 ### "Your connection is not private" warning
@@ -353,14 +467,20 @@ curl -I https://192.168.1.100
 - **Check logs**: `sudo tail -f /var/log/nginx/error.log`
 
 ### Can't access from other devices
-- **Firewall**: Open ports 80 and 443
-  ```bash
-  sudo ufw allow 80/tcp
-  sudo ufw allow 443/tcp
-  sudo ufw reload
-  ```
+- **Firewall**: Ports 80 and 443 should already be open (step 9)
 - **Verify server IP**: `ip addr show` or `hostname -I`
 - **Test connectivity**: From client, `ping 192.168.1.100`
+
+### Gunicorn service issues
+- **Check status**: `sudo systemctl status gunicorn`
+- **View logs**: `sudo journalctl -u gunicorn -n 50`
+- **Check socket**: `ls -l /run/gunicorn.sock`
+- **Permissions**: Ensure www-data owns the project directory
+
+### Static files not loading
+- **Run collectstatic**: `python manage.py collectstatic --noinput`
+- **Check Nginx config**: Verify `/static/` location matches your `STATIC_ROOT`
+- **Permissions**: `sudo chown -R www-data:www-data /path/to/staticfiles/`
 
 ---
 
@@ -377,25 +497,292 @@ curl -I https://192.168.1.100
 
 ---
 
-## Optional: Use .local mDNS hostname
+## Advanced: Hosting Multiple Apps with .local Domains
 
-Instead of remembering the IP, use a `.local` hostname (requires Avahi/mDNS):
+Instead of using IP addresses, you can host **multiple web applications** on the same server using `.local` mDNS hostnames with Nginx as a reverse proxy. This gives you clean URLs like `https://armguard.local`, `https://app2.local`, etc.
 
-**On Ubuntu Server:**
+### Why use mkcert + Nginx together?
+
+| Component | Purpose |
+|-----------|---------|
+| **mkcert** | Generates trusted HTTPS certificates for local domains |
+| **Nginx** | Routes traffic to multiple apps, serves HTTPS using mkcert certs |
+| **Avahi/mDNS** | Makes `.local` domains discoverable on your network |
+
+### Setup: Multiple Apps on One Server
+
+#### 1) Install Avahi for .local domain resolution
+
 ```bash
 sudo apt install avahi-daemon
 sudo systemctl enable avahi-daemon
 sudo systemctl start avahi-daemon
 
-# Edit /etc/hostname to set hostname (e.g., "armguard")
+# Set your server hostname
 sudo hostnamectl set-hostname armguard
 ```
 
-**Access from clients**: `https://armguard.local` (works on macOS, Linux, Windows 10+ with Bonjour)
+Now your server is accessible at `armguard.local` from any device on the network.
 
-**Generate certificate**:
+#### 2) Generate certificates for each app
+
 ```bash
-mkcert armguard.local 192.168.1.100 localhost 127.0.0.1
+# Generate a wildcard cert for multiple subdomains (recommended)
+mkcert "*.local" localhost 127.0.0.1
+
+# OR generate individual certs for each app
+mkcert armguard.local inventory.local personnel.local localhost 127.0.0.1
+```
+
+Move certificates to secure location:
+```bash
+sudo mkdir -p /etc/ssl/local-apps
+sudo mv *.local*.pem /etc/ssl/local-apps/
+sudo chmod 644 /etc/ssl/local-apps/*.pem
+sudo chmod 600 /etc/ssl/local-apps/*-key.pem
+```
+
+#### 3) Configure Nginx for multiple apps
+
+Create separate server blocks for each app:
+
+**App 1: Armguard Django app** (`/etc/nginx/sites-available/armguard.local`):
+```nginx
+server {
+    listen 80;
+    server_name armguard.local;
+    return 301 https://$server_name$request_uri;
+}
+
+server {
+    listen 443 ssl http2;
+    server_name armguard.local;
+
+    ssl_certificate /etc/ssl/local-apps/_local.pem;
+    ssl_certificate_key /etc/ssl/local-apps/_local-key.pem;
+
+    # Modern SSL configuration
+    ssl_protocols TLSv1.2 TLSv1.3;
+    ssl_prefer_server_ciphers off;
+
+    # Security headers
+    add_header Strict-Transport-Security "max-age=31536000; includeSubDomains" always;
+    add_header X-Frame-Options DENY;
+    add_header X-Content-Type-Options nosniff;
+
+    # Proxy to Gunicorn
+    location / {
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_pass http://unix:/run/gunicorn-armguard.sock;
+    }
+
+    location /static/ {
+        alias /home/user/armguard/staticfiles/;
+        expires 30d;
+    }
+
+    location /media/ {
+        alias /home/user/armguard/media/;
+        expires 30d;
+    }
+}
+```
+
+**App 2: Another Django/Flask/Node.js app** (`/etc/nginx/sites-available/inventory.local`):
+```nginx
+server {
+    listen 80;
+    server_name inventory.local;
+    return 301 https://$server_name$request_uri;
+}
+
+server {
+    listen 443 ssl http2;
+    server_name inventory.local;
+
+    ssl_certificate /etc/ssl/local-apps/_local.pem;
+    ssl_certificate_key /etc/ssl/local-apps/_local-key.pem;
+
+    ssl_protocols TLSv1.2 TLSv1.3;
+    ssl_prefer_server_ciphers off;
+
+    add_header Strict-Transport-Security "max-age=31536000; includeSubDomains" always;
+    add_header X-Frame-Options DENY;
+    add_header X-Content-Type-Options nosniff;
+
+    location / {
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_pass http://localhost:8080;  # Different app on port 8080
+    }
+}
+```
+
+Enable all sites:
+```bash
+sudo ln -sf /etc/nginx/sites-available/armguard.local /etc/nginx/sites-enabled/
+sudo ln -sf /etc/nginx/sites-available/inventory.local /etc/nginx/sites-enabled/
+sudo nginx -t
+sudo systemctl reload nginx
+```
+
+#### 4) Create separate Gunicorn services for each Django app
+
+For the armguard app, modify the systemd service to use a unique socket:
+
+`/etc/systemd/system/gunicorn-armguard.service`:
+```ini
+[Unit]
+Description=gunicorn daemon for armguard
+After=network.target
+
+[Service]
+User=www-data
+Group=www-data
+WorkingDirectory=/home/user/armguard
+Environment="PATH=/home/user/armguard/venv/bin"
+ExecStart=/home/user/armguard/venv/bin/gunicorn \
+          --workers 3 \
+          --bind unix:/run/gunicorn-armguard.sock \
+          core.wsgi:application
+
+[Install]
+WantedBy=multi-user.target
+```
+
+For a second Django app:
+
+`/etc/systemd/system/gunicorn-inventory.service`:
+```ini
+[Unit]
+Description=gunicorn daemon for inventory
+After=network.target
+
+[Service]
+User=www-data
+Group=www-data
+WorkingDirectory=/home/user/inventory-app
+Environment="PATH=/home/user/inventory-app/venv/bin"
+ExecStart=/home/user/inventory-app/venv/bin/gunicorn \
+          --workers 2 \
+          --bind unix:/run/gunicorn-inventory.sock \
+          inventory.wsgi:application
+
+[Install]
+WantedBy=multi-user.target
+```
+
+Start both services:
+```bash
+sudo systemctl daemon-reload
+sudo systemctl start gunicorn-armguard
+sudo systemctl start gunicorn-inventory
+sudo systemctl enable gunicorn-armguard
+sudo systemctl enable gunicorn-inventory
+```
+
+#### 5) Update Django ALLOWED_HOSTS for each app
+
+In each app's `settings.py`:
+```python
+# armguard/core/settings.py
+ALLOWED_HOSTS = ['armguard.local', '192.168.1.100', 'localhost']
+
+# inventory-app/inventory/settings.py
+ALLOWED_HOSTS = ['inventory.local', '192.168.1.100', 'localhost']
+```
+
+#### 6) Add local DNS entries on client devices
+
+Since mDNS only resolves the server's hostname (e.g., `armguard.local`), you need to map additional `.local` domains on **client devices**:
+
+**Windows** (edit `C:\Windows\System32\drivers\etc\hosts` as Administrator):
+```
+192.168.1.100   armguard.local
+192.168.1.100   inventory.local
+192.168.1.100   personnel.local
+```
+
+**macOS/Linux** (edit `/etc/hosts` with sudo):
+```
+192.168.1.100   armguard.local
+192.168.1.100   inventory.local
+192.168.1.100   personnel.local
+```
+
+**Android/iOS**: Use a DNS manager app or configure static DNS entries (more complex, hosts file method recommended for desktop only).
+
+#### 7) Access your apps
+
+Now you can access:
+- 🔹 `https://armguard.local` - Main armguard Django app
+- 🔹 `https://inventory.local` - Second app
+- 🔹 `https://personnel.local` - Third app
+
+All with **trusted HTTPS certificates** and **no browser warnings** (after installing the mkcert CA on clients).
+
+### Summary: Multi-App Architecture
+
+```
+┌─────────────────────────────────────────────────────┐
+│  Client Devices (Windows, Android, iOS, macOS)      │
+│  - CA installed (rootCA.pem)                        │
+│  - /etc/hosts entries for .local domains            │
+└────────────────┬────────────────────────────────────┘
+                 │
+                 │ HTTPS (443)
+                 │
+┌────────────────▼────────────────────────────────────┐
+│  Ubuntu Server (192.168.1.100)                      │
+│  ┌──────────────────────────────────────────────┐  │
+│  │  Nginx (Reverse Proxy)                       │  │
+│  │  - Listens on port 443 (HTTPS)               │  │
+│  │  - Routes by server_name (armguard.local,    │  │
+│  │    inventory.local, etc.)                    │  │
+│  │  - Uses mkcert certificates                  │  │
+│  └────┬─────────────────┬────────────────┬──────┘  │
+│       │                 │                │          │
+│  ┌────▼─────┐     ┌─────▼──────┐   ┌────▼──────┐  │
+│  │ Gunicorn │     │ Gunicorn   │   │ Node.js/  │  │
+│  │ armguard │     │ inventory  │   │ Flask app │  │
+│  │ :sock    │     │ :8080      │   │ :3000     │  │
+│  └──────────┘     └────────────┘   └───────────┘  │
+└─────────────────────────────────────────────────────┘
+```
+
+**Benefits**:
+- ✅ Clean URLs for each app
+- ✅ Single server, single port (443)
+- ✅ All apps use HTTPS with trusted certs
+- ✅ Easy to add/remove apps (just add Nginx config)
+- ✅ Isolated services (each app has own Gunicorn/process)
+
+---
+
+## Quick Reference: Service Management
+
+```bash
+# Restart all services after changes
+sudo systemctl restart gunicorn
+sudo systemctl restart nginx
+
+# View logs
+sudo journalctl -u gunicorn -f    # Follow Gunicorn logs
+sudo journalctl -u nginx -f       # Follow Nginx logs
+sudo tail -f /var/log/nginx/error.log
+
+# Check status
+sudo systemctl status gunicorn
+sudo systemctl status nginx
+
+# Enable services on boot (already done in setup)
+sudo systemctl enable gunicorn
+sudo systemctl enable nginx
 ```
 
 ---
@@ -403,9 +790,11 @@ mkcert armguard.local 192.168.1.100 localhost 127.0.0.1
 ## Summary
 
 ✅ **You now have**:
+- Nginx reverse proxy configured
+- Gunicorn running as a systemd service
 - Full HTTPS encryption on your LAN
 - Trusted SSL certificates (no browser warnings)
-- Secure Django deployment with Nginx + Gunicorn
+- Secure Django deployment ready for production use
 
 ✅ **To add new client devices**:
 - Copy `rootCA.pem` from server's `~/.local/share/mkcert/`
@@ -415,10 +804,16 @@ mkcert armguard.local 192.168.1.100 localhost 127.0.0.1
 - Certificates last 10+ years (no renewal needed)
 - Update Nginx config if you change IPs/hostnames
 - Keep the server's `rootCA-key.pem` file secure
+- Use `sudo systemctl restart gunicorn` after code changes
+- Use `sudo systemctl reload nginx` after Nginx config changes
 
 ---
 
-**Next steps**: Follow the [UBUNTU_INSTALL.md](./UBUNTU_INSTALL.md) guide for full Ubuntu deployment, then return here for SSL setup.
+**Deployment workflow**:
+1. Deploy Django code to Ubuntu Server (see [UBUNTU_INSTALL.md](./UBUNTU_INSTALL.md))
+2. Follow this guide (all steps in order)
+3. Install CA certificate on all client devices (Part 2)
+4. Access your app at `https://your-server-ip` with full HTTPS encryption
 
 ---
 
