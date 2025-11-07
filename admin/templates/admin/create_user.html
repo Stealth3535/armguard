@@ -128,7 +128,7 @@
 {% endblock %}
 
 {% block content %}
-<div class="form-container">
+<div class="form-container" data-is-edit="{% if is_edit %}true{% else %}false{% endif %}">
     <h1>{% if is_edit %}Edit User{% else %}Register User{% endif %}</h1>
     <p style="color: #666; margin-bottom: 1.5rem;">
         {% if is_edit %}
@@ -288,7 +288,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const emailInput = document.getElementById('{{ form.email.id_for_label }}');
     const passwordInput = document.getElementById('{{ form.password.id_for_label }}');
     const confirmPasswordInput = document.getElementById('{{ form.confirm_password.id_for_label }}');
-    const isEdit = {{ is_edit|yesno:"true,false" }};
+    const isEdit = document.querySelector('.form-container').dataset.isEdit === 'true';
     
     function updateFormFields() {
         const role = roleSelect.value;
