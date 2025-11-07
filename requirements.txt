@@ -1,0 +1,6 @@
+Django>=5.1.1
+Pillow>=10.0.0
+qrcode>=7.4.2
+reportlab>=4.0.0
+python-decouple>=3.8
+mkcert>=1.4.0

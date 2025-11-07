@@ -1,0 +1,158 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Personnel Directory{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'personnel/personnel_profile_list.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="container">
+    <!-- Page Header -->
+    <div class="page-header">
+        <div>
+            <h1 class="page-title">Personnel Directory</h1>
+            <p class="page-subtitle">{{ personnel_list|length }} Personnel Records</p>
+        </div>
+    </div>
+
+    <!-- Search Bar -->
+    <div class="search-bar">
+        <input type="text" id="searchInput" class="search-input" placeholder="🔍 Search by name, rank, serial, or office...">
+    </div>
+
+    <!-- Filter Bar -->
+    <div class="filter-bar">
+        <div class="form-group" style="margin: 0; min-width: 200px;">
+            <select id="statusFilter" class="form-control form-select">
+                <option value="">All Status</option>
+                <option value="Active">Active</option>
+                <option value="Inactive">Inactive</option>
+            </select>
+        </div>
+        <div class="form-group" style="margin: 0; min-width: 200px;">
+            <select id="rankFilter" class="form-control form-select">
+                <option value="">All Ranks</option>
+                <option value="officer">Officers</option>
+                <option value="enlisted">Enlisted</option>
+            </select>
+        </div>
+        <div class="form-group" style="margin: 0; min-width: 200px;">
+            <select id="officeFilter" class="form-control form-select">
+                <option value="">All Offices</option>
+                <option value="HAS">HAS</option>
+                <option value="951">951</option>
+                <option value="952">952</option>
+                <option value="953">953</option>
+            </select>
+        </div>
+    </div>
+
+    <!-- Personnel Cards Grid -->
+    <div class="grid grid-3" id="personnelGrid">
+        {% for person in personnel_list %}
+        <div class="card personnel-card" 
+             data-status="{{ person.status }}" 
+             data-rank="{% if person.is_officer %}officer{% else %}enlisted{% endif %}"
+             data-office="{{ person.office }}"
+             data-search="{{ person.get_full_name|lower }} {{ person.rank|lower }} {{ person.serial|lower }} {{ person.office|lower }}">
+            
+            <div class="d-flex gap-2 mb-2">
+                {% if person.picture %}
+                <img src="{{ person.picture.url }}" alt="{{ person.get_full_name }}" class="personnel-picture" style="width: 100px; height: 100px;">
+                {% else %}
+                <div class="no-picture" style="width: 100px; height: 100px; font-size: 0.8rem;">No Photo</div>
+                {% endif %}
+                
+                <div style="flex: 1;">
+                    <h3 style="margin: 0; color: var(--primary-color); font-size: 1.1rem;">
+                        {{ person.get_full_name }}
+                    </h3>
+                    <p style="margin: 0.5rem 0; color: var(--text-light);">
+                        <strong>{{ person.rank }}</strong>
+                    </p>
+                    <div>
+                        {% if person.is_officer %}
+                        <span class="badge badge-officer">Officer</span>
+                        {% else %}
+                        <span class="badge badge-enlisted">Enlisted</span>
+                        {% endif %}
+                        
+                        {% if person.status == 'Active' %}
+                        <span class="badge badge-active">{{ person.status }}</span>
+                        {% else %}
+                        <span class="badge badge-inactive">{{ person.status }}</span>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+            
+            <div class="detail-grid" style="margin-top: 1rem;">
+                <div class="detail-item" style="padding: 0.5rem;">
+                    <div class="detail-label" style="font-size: 0.75rem;">ID</div>
+                    <div class="detail-value" style="font-size: 0.9rem;">{{ person.id }}</div>
+                </div>
+                <div class="detail-item" style="padding: 0.5rem;">
+                    <div class="detail-label" style="font-size: 0.75rem;">Serial</div>
+                    <div class="detail-value" style="font-size: 0.9rem;">{{ person.serial }}</div>
+                </div>
+                <div class="detail-item" style="padding: 0.5rem;">
+                    <div class="detail-label" style="font-size: 0.75rem;">Office</div>
+                    <div class="detail-value" style="font-size: 0.9rem;">{{ person.office }}</div>
+                </div>
+                <div class="detail-item" style="padding: 0.5rem;">
+                    <div class="detail-label" style="font-size: 0.75rem;">Phone</div>
+                    <div class="detail-value" style="font-size: 0.9rem;">{{ person.tel }}</div>
+                </div>
+            </div>
+            
+            <div class="mt-2">
+                <a href="{% url 'personnel:personnel_profile_detail' person.id %}" class="btn btn-primary btn-sm" style="width: 100%;">View Details →</a>
+            </div>
+        </div>
+        {% empty %}
+        <div class="card" style="grid-column: 1 / -1;">
+            <p class="text-center text-muted">No personnel found.</p>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Search functionality
+document.getElementById('searchInput').addEventListener('input', filterPersonnel);
+document.getElementById('statusFilter').addEventListener('change', filterPersonnel);
+document.getElementById('rankFilter').addEventListener('change', filterPersonnel);
+document.getElementById('officeFilter').addEventListener('change', filterPersonnel);
+
+function filterPersonnel() {
+    const searchTerm = document.getElementById('searchInput').value.toLowerCase();
+    const statusFilter = document.getElementById('statusFilter').value;
+    const rankFilter = document.getElementById('rankFilter').value;
+    const officeFilter = document.getElementById('officeFilter').value;
+    
+    const cards = document.querySelectorAll('.personnel-card');
+    
+    cards.forEach(card => {
+        const searchData = card.getAttribute('data-search');
+        const status = card.getAttribute('data-status');
+        const rank = card.getAttribute('data-rank');
+        const office = card.getAttribute('data-office');
+        
+        const matchesSearch = searchData.includes(searchTerm);
+        const matchesStatus = !statusFilter || status === statusFilter;
+        const matchesRank = !rankFilter || rank === rankFilter;
+        const matchesOffice = !officeFilter || office === officeFilter;
+        
+        if (matchesSearch && matchesStatus && matchesRank && matchesOffice) {
+            card.style.display = 'block';
+        } else {
+            card.style.display = 'none';
+        }
+    });
+}
+</script>
+{% endblock %}

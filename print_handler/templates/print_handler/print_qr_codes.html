@@ -1,0 +1,430 @@
+{% extends "base.html" %}
+
+{% comment %}
+================================================================================
+QR CODE PRINT LAYOUT TEMPLATE
+================================================================================
+This template uses Python configuration from:
+    armguard/print_handler/pdf_filler/qr_print_layout.py
+
+To adjust paper size, QR dimensions, card layout, spacing, etc.:
+    1. Open: print_handler/pdf_filler/qr_print_layout.py
+    2. Edit the settings at the top (PAPER_SIZE_NAME, CARD_WIDTH_MM, QR_SIZE_MM, etc.)
+    3. Save the file
+    4. Refresh this page
+
+All measurements are in MILLIMETERS in the Python file for easy adjustment!
+================================================================================
+{% endcomment %}
+
+{% block title %}Print QR Codes - ArmGuard{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="page-header no-print">
+        <h1 class="page-title">Print QR Codes</h1>
+        <div style="display: flex; gap: 10px;">
+            <button onclick="window.print()" class="btn btn-primary">🖨️ Print Page</button>
+        </div>
+    </div>
+
+    <div class="print-section">
+        {% if qr_type == 'all' or qr_type == 'personnel' %}
+        <h2>Personnel QR Codes</h2>
+        <div class="qr-grid">
+            {% for qr in personnel_qrcodes %}
+            <div class="qr-card">
+                <div class="qr-id">
+                    <strong>ID:</strong> {{ qr.reference_id }}
+                </div>
+                <div class="qr-name">
+                    {{ qr.name }}
+                </div>
+                <div class="qr-image">
+                    <img src="{{ qr.qr_image.url }}?v={{ qr.updated_at|date:'U' }}" alt="QR Code for {{ qr.reference_id }}">
+                </div>
+                <div class="qr-info">
+                    <p class="qr-type">PERSONNEL</p>
+                </div>
+            </div>
+            {% empty %}
+            <p class="text-muted">No personnel QR codes found.</p>
+            {% endfor %}
+        </div>
+        {% endif %}
+
+        {% if qr_type == 'all' %}
+        <div class="page-break"></div>
+        {% endif %}
+
+        {% if qr_type == 'all' or qr_type == 'items' %}
+        <h2>Item QR Codes</h2>
+        <div class="qr-grid">
+            {% for qr in item_qrcodes %}
+            <div class="qr-card">
+                <div class="qr-id">
+                    <strong>ID:</strong> {{ qr.reference_id }}
+                </div>
+                <div class="qr-name">
+                    {{ qr.name }}
+                </div>
+                <div class="qr-image">
+                    <img src="{{ qr.qr_image.url }}?v={{ qr.updated_at|date:'U' }}" alt="QR Code for {{ qr.reference_id }}">
+                </div>
+                <div class="qr-info">
+                    <p class="qr-type">ITEM</p>
+                </div>
+            </div>
+            {% empty %}
+            <p class="text-muted">No item QR codes found.</p>
+            {% endfor %}
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<style>
+    /* Print Form Layout - Controlled by Python (qr_print_layout.py) */
+    /* To adjust: Edit armguard/print_handler/pdf_filler/qr_print_layout.py */
+    
+    .qr-grid {
+        display: flex;
+        flex-wrap: wrap;
+        gap: {{ layout.h_gap|floatformat:0 }}pt {{ layout.v_gap|floatformat:0 }}pt;
+        justify-content: flex-start;
+        margin-top: 24px;
+    }
+    
+    .qr-card {
+        background: white;
+        border: {{ layout.card_border_width }}pt solid #000;
+        border-radius: {{ layout.card_border_radius }}pt;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        padding: {{ layout.card_padding|floatformat:0 }}pt {{ layout.card_padding|floatformat:0 }}pt {{ layout.card_padding_bottom|floatformat:0 }}pt {{ layout.card_padding|floatformat:0 }}pt;
+        width: {{ layout.card_width|floatformat:0 }}pt;
+        height: {{ layout.card_height|floatformat:0 }}pt;
+        text-align: left;
+        page-break-inside: avoid;
+        break-inside: avoid;
+        box-sizing: border-box;
+    }
+    
+    .qr-id {
+        font-size: {{ layout.font_size_id }}pt;
+        margin-bottom: 4px;
+        font-weight: bold;
+        font-family: 'Courier New', monospace;
+        color: #000;
+    }
+    
+    .qr-name {
+        font-size: {{ layout.font_size_name }}pt;
+        margin-bottom: 12px;
+        font-weight: 600;
+        color: #000;
+        min-height: 20px;
+    }
+    
+    .qr-header {
+        font-size: 16px;
+        margin-bottom: 8px;
+        font-weight: bold;
+        font-family: 'Courier New', monospace;
+        text-align: center;
+    }
+    
+    .qr-image {
+        margin: 12px auto;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+    }
+    
+    .qr-image img {
+        width: {{ layout.qr_size|floatformat:0 }}pt;
+        height: {{ layout.qr_size|floatformat:0 }}pt;
+        image-rendering: -webkit-optimize-contrast;
+        image-rendering: crisp-edges;
+        image-rendering: pixelated;
+        background: white;
+        border-radius: 0;
+        margin-bottom: 0;
+    }
+    
+    .qr-info {
+        margin-top: 12px;
+        font-size: 12px;
+        text-align: center;
+    }
+    
+    .qr-info p {
+        margin: 4px 0;
+        word-wrap: break-word;
+    }
+    
+    .qr-type {
+        display: inline-block;
+        padding: 4px 12px;
+        background: #f0f0f0;
+        border: 1px solid #333;
+        border-radius: 4px;
+        font-size: {{ layout.font_size_badge }}pt;
+        font-weight: bold;
+        margin-top: 8px;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+    
+    .page-break {
+        page-break-after: always;
+        break-after: page;
+    }
+    
+    h2 {
+        font-size: 24px;
+        margin: 20px 0 16px 0;
+        font-weight: bold;
+        color: #000;
+    }
+    
+    /* Print-specific styles */
+    @media print {
+        /* Hide all navigation and UI elements */
+        .no-print,
+        header,
+        nav,
+        .navbar,
+        .sidebar,
+        .page-header,
+        .btn,
+        button,
+        .menu,
+        .navigation,
+        footer,
+        .logout,
+        a[href*="logout"] {
+            display: none !important;
+        }
+        
+        body {
+            background: white !important;
+            color: black !important;
+            margin: 0 !important;
+            padding: 0 !important;
+        }
+        
+        /* Remove any base template styling */
+        * {
+            background: transparent !important;
+        }
+        
+        .container {
+            width: 100% !important;
+            max-width: none !important;
+            padding: 0 !important;
+            margin: 0 !important;
+        }
+        
+        .print-section {
+            padding: {{ layout.margin|floatformat:0 }}pt !important;
+            background: white !important;
+        }
+        
+        .qr-grid {
+            gap: {{ layout.h_gap|floatformat:0 }}pt {{ layout.v_gap|floatformat:0 }}pt;
+        }
+        
+        .qr-card {
+            border: {{ layout.card_border_width }}pt solid #000 !important;
+            box-shadow: none !important;
+            background: white !important;
+        }
+        
+        .qr-image img {
+            background: white !important;
+            image-rendering: -webkit-optimize-contrast !important;
+            image-rendering: crisp-edges !important;
+            image-rendering: pixelated !important;
+            border-radius: 0 !important;
+        }
+        
+        h2 {
+            background: white !important;
+            color: #000 !important;
+        }
+        
+        /* Page setup - Using Python configuration */
+        @page {
+            size: {{ layout.page_width|floatformat:0 }}pt {{ layout.page_height|floatformat:0 }}pt;
+            margin: {{ layout.margin|floatformat:0 }}pt;
+        }
+    }
+    
+    /* Screen view styles */
+    @media screen {
+        .print-section {
+            background: #f5f5f5;
+            padding: 20px;
+            min-height: 100vh;
+        }
+        
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+    }
+    
+    .qr-name {
+        font-size: 14px;
+        margin-bottom: 12px;
+        font-weight: 600;
+        color: #000;
+        min-height: 20px;
+    }
+    
+    .qr-header {
+        font-size: 16px;
+        margin-bottom: 8px;
+        font-weight: bold;
+        font-family: 'Courier New', monospace;
+        text-align: center;
+    }
+    
+    .qr-image {
+        margin: 12px auto;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+    }
+    
+    .qr-image img {
+        width: {{ layout.qr_size|floatformat:0 }}pt;
+        height: {{ layout.qr_size|floatformat:0 }}pt;
+        image-rendering: -webkit-optimize-contrast;
+        image-rendering: crisp-edges;
+        image-rendering: pixelated;
+        background: white;
+        border-radius: 0;
+        margin-bottom: 0;
+    }
+    
+    .qr-info {
+        margin-top: 12px;
+        font-size: 12px;
+        text-align: center;
+    }
+    
+    .qr-info p {
+        margin: 4px 0;
+        word-wrap: break-word;
+    }
+    
+    .qr-type {
+        display: inline-block;
+        padding: 4px 12px;
+        background: #f0f0f0;
+        border: 1px solid #333;
+        border-radius: 4px;
+        font-size: 10px;
+        font-weight: bold;
+        margin-top: 8px;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+    
+    .page-break {
+        page-break-after: always;
+        break-after: page;
+    }
+    
+    h2 {
+        font-size: 24px;
+        margin: 20px 0 16px 0;
+        font-weight: bold;
+        color: #000;
+    }
+    
+    /* Print-specific styles */
+    @media print {
+        /* Hide all navigation and UI elements */
+        .no-print,
+        header,
+        nav,
+        .navbar,
+        .sidebar,
+        .page-header,
+        .btn,
+        button,
+        .menu,
+        .navigation,
+        footer,
+        .logout,
+        a[href*="logout"] {
+            display: none !important;
+        }
+        
+        body {
+            background: white !important;
+            color: black !important;
+            margin: 0 !important;
+            padding: 0 !important;
+        }
+        
+        /* Remove any base template styling */
+        * {
+            background: transparent !important;
+        }
+        
+        .container {
+            width: 100% !important;
+            max-width: none !important;
+            padding: 0 !important;
+            margin: 0 !important;
+        }
+        
+        .print-section {
+            padding: 15px !important;
+            background: white !important;
+        }
+        
+        .qr-grid {
+            gap: 16px;
+        }
+        
+        .qr-card {
+            border: 2px solid #000 !important;
+            box-shadow: none !important;
+            background: white !important;
+        }
+        
+        .qr-image img {
+            background: #f8f8f8 !important;
+        }
+        
+        h2 {
+            background: white !important;
+            color: #000 !important;
+        }
+        
+        /* Page setup for A4/Letter */
+        @page {
+            size: A4;
+            margin: 15mm;
+        }
+    }
+    
+    /* Screen view styles */
+    @media screen {
+        .print-section {
+            background: #f5f5f5;
+            padding: 20px;
+            min-height: 100vh;
+        }
+        
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+    }
+</style>
+{% endblock %}

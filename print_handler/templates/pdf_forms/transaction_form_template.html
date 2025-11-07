@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Transaction Form - ArmGuard</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 40px;
+            background: white;
+        }
+        .form-container {
+            border: 3px solid #000;
+            padding: 30px;
+            max-width: 700px;
+            margin: 0 auto;
+        }
+        .form-header {
+            text-align: center;
+            border-bottom: 2px solid #000;
+            padding-bottom: 15px;
+            margin-bottom: 25px;
+        }
+        .form-title {
+            font-size: 24px;
+            font-weight: bold;
+            margin: 0;
+        }
+        .form-section {
+            margin: 20px 0;
+        }
+        .section-title {
+            font-weight: bold;
+            font-size: 16px;
+            text-transform: uppercase;
+            margin-bottom: 10px;
+            border-bottom: 1px solid #000;
+        }
+        .field-row {
+            display: flex;
+            margin: 8px 0;
+        }
+        .field-label {
+            width: 150px;
+            font-weight: bold;
+        }
+        .field-value {
+            flex: 1;
+            border-bottom: 1px solid #000;
+        }
+        .signatures {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 40px;
+        }
+        .signature-box {
+            text-align: center;
+        }
+        .signature-line {
+            width: 250px;
+            border-top: 1px solid #000;
+            margin-bottom: 5px;
+        }
+    </style>
+</head>
+<body>
+    <div class="form-container">
+        <div class="form-header">
+            <h1 class="form-title">ARMGUARD TRANSACTION FORM</h1>
+        </div>
+        
+        <div class="form-section">
+            <div class="section-title">Transaction Details</div>
+            <div class="field-row">
+                <div class="field-label">Transaction ID:</div>
+                <div class="field-value">{{ transaction_id }}</div>
+            </div>
+            <div class="field-row">
+                <div class="field-label">Date/Time:</div>
+                <div class="field-value">{{ date_time }}</div>
+            </div>
+            <div class="field-row">
+                <div class="field-label">Action:</div>
+                <div class="field-value">{{ action }}</div>
+            </div>
+        </div>
+        
+        <div class="form-section">
+            <div class="section-title">Personnel Information</div>
+            <div class="field-row">
+                <div class="field-label">Personnel ID:</div>
+                <div class="field-value">{{ personnel_id }}</div>
+            </div>
+            <div class="field-row">
+                <div class="field-label">Name:</div>
+                <div class="field-value">{{ personnel_name }}</div>
+            </div>
+            <div class="field-row">
+                <div class="field-label">Rank:</div>
+                <div class="field-value">{{ personnel_rank }}</div>
+            </div>
+        </div>
+        
+        <div class="form-section">
+            <div class="section-title">Item Information</div>
+            <div class="field-row">
+                <div class="field-label">Serial Number:</div>
+                <div class="field-value">{{ item_serial }}</div>
+            </div>
+            <div class="field-row">
+                <div class="field-label">Item Type:</div>
+                <div class="field-value">{{ item_type }}</div>
+            </div>
+            <div class="field-row">
+                <div class="field-label">Model:</div>
+                <div class="field-value">{{ item_model }}</div>
+            </div>
+        </div>
+        
+        <div class="signatures">
+            <div class="signature-box">
+                <div class="signature-line"></div>
+                <div>Personnel Signature</div>
+            </div>
+            <div class="signature-box">
+                <div class="signature-line"></div>
+                <div>Armorer Signature</div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

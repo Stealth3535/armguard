@@ -1,0 +1,170 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Register Personnel - ArmGuard{% endblock %}
+
+{% block extra_css %}
+<style>
+    .form-container {
+        max-width: 800px;
+        margin: 0 auto;
+        background: white;
+        padding: 2rem;
+        border-radius: 10px;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    
+    .form-container h1 {
+        margin-top: 0;
+        color: #333;
+    }
+    
+    .form-group {
+        margin-bottom: 1.5rem;
+    }
+    
+    .form-group label {
+        display: block;
+        margin-bottom: 0.5rem;
+        color: #333;
+        font-weight: 500;
+    }
+    
+    .form-group input,
+    .form-group select {
+        width: 100%;
+        padding: 0.75rem;
+        border: 1px solid #ddd;
+        border-radius: 5px;
+        font-size: 1rem;
+    }
+    
+    .form-group input:focus,
+    .form-group select:focus {
+        outline: none;
+        border-color: #667eea;
+        box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+    }
+    
+    .form-actions {
+        display: flex;
+        gap: 1rem;
+        margin-top: 2rem;
+    }
+    
+    .btn {
+        padding: 0.75rem 1.5rem;
+        border: none;
+        border-radius: 5px;
+        font-size: 1rem;
+        cursor: pointer;
+        text-decoration: none;
+        display: inline-block;
+        transition: all 0.3s;
+    }
+    
+    .btn-primary {
+        background: #667eea;
+        color: white;
+    }
+    
+    .btn-primary:hover {
+        background: #5568d3;
+    }
+    
+    .btn-secondary {
+        background: #6b7280;
+        color: white;
+    }
+    
+    .btn-secondary:hover {
+        background: #4b5563;
+    }
+    
+    .help-text {
+        font-size: 0.875rem;
+        color: #666;
+        margin-top: 0.25rem;
+    }
+    
+    .errorlist {
+        list-style: none;
+        padding: 0;
+        color: #dc2626;
+        font-size: 0.875rem;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="form-container">
+    <h1>Register Personnel (No User Account)</h1>
+    <p style="color: #666; margin-bottom: 1.5rem;">This form creates a personnel record without a user account.</p>
+    
+    <form method="post" enctype="multipart/form-data">
+        {% csrf_token %}
+        
+        <div class="form-group">
+            {{ form.surname.errors }}
+            <label for="{{ form.surname.id_for_label }}">{{ form.surname.label }}</label>
+            {{ form.surname }}
+        </div>
+        
+        <div class="form-group">
+            {{ form.firstname.errors }}
+            <label for="{{ form.firstname.id_for_label }}">{{ form.firstname.label }}</label>
+            {{ form.firstname }}
+        </div>
+        
+        <div class="form-group">
+            {{ form.middle_initial.errors }}
+            <label for="{{ form.middle_initial.id_for_label }}">{{ form.middle_initial.label }}</label>
+            {{ form.middle_initial }}
+        </div>
+        
+        <div class="form-group">
+            {{ form.rank.errors }}
+            <label for="{{ form.rank.id_for_label }}">{{ form.rank.label }}</label>
+            {{ form.rank }}
+        </div>
+        
+        <div class="form-group">
+            {{ form.serial.errors }}
+            <label for="{{ form.serial.id_for_label }}">{{ form.serial.label }}</label>
+            {{ form.serial }}
+            {% if form.serial.help_text %}
+            <p class="help-text">{{ form.serial.help_text }}</p>
+            {% endif %}
+        </div>
+        
+        <div class="form-group">
+            {{ form.office.errors }}
+            <label for="{{ form.office.id_for_label }}">{{ form.office.label }}</label>
+            {{ form.office }}
+        </div>
+        
+        <div class="form-group">
+            {{ form.tel.errors }}
+            <label for="{{ form.tel.id_for_label }}">{{ form.tel.label }}</label>
+            {{ form.tel }}
+        </div>
+        
+        <div class="form-group">
+            {{ form.status.errors }}
+            <label for="{{ form.status.id_for_label }}">{{ form.status.label }}</label>
+            {{ form.status }}
+        </div>
+        
+        <div class="form-group">
+            {{ form.picture.errors }}
+            <label for="{{ form.picture.id_for_label }}">{{ form.picture.label }}</label>
+            {{ form.picture }}
+        </div>
+        
+        <div class="form-actions">
+            <button type="submit" class="btn btn-primary">Register Personnel</button>
+            <a href="{% url 'personnel:personnel_profile_list' %}" class="btn btn-secondary">Cancel</a>
+        </div>
+    </form>
+</div>
+{% endblock %}
