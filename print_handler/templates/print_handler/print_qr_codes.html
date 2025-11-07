@@ -87,191 +87,39 @@ All measurements are in MILLIMETERS in the Python file for easy adjustment!
     /* Print Form Layout - Controlled by Python (qr_print_layout.py) */
     /* To adjust: Edit armguard/print_handler/pdf_filler/qr_print_layout.py */
     
+    /* Main grid layout */
     .qr-grid {
         display: flex;
         flex-wrap: wrap;
-        gap: {{ layout.h_gap|floatformat:0 }}pt {{ layout.v_gap|floatformat:0 }}pt;
+        gap: 16px;
         justify-content: flex-start;
         margin-top: 24px;
     }
     
+    /* QR card styling */
     .qr-card {
         background: white;
-        border: {{ layout.card_border_width }}pt solid #000;
-        border-radius: {{ layout.card_border_radius }}pt;
+        border: 2px solid #000;
+        border-radius: 4px;
         box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-        padding: {{ layout.card_padding|floatformat:0 }}pt {{ layout.card_padding|floatformat:0 }}pt {{ layout.card_padding_bottom|floatformat:0 }}pt {{ layout.card_padding|floatformat:0 }}pt;
-        width: {{ layout.card_width|floatformat:0 }}pt;
-        height: {{ layout.card_height|floatformat:0 }}pt;
+        padding: 12px;
+        padding-bottom: 16px;
+        width: 200px;
+        height: auto;
+        min-height: 280px;
         text-align: left;
         page-break-inside: avoid;
         break-inside: avoid;
         box-sizing: border-box;
     }
     
+    /* Typography */
     .qr-id {
-        font-size: {{ layout.font_size_id }}pt;
+        font-size: 11px;
         margin-bottom: 4px;
         font-weight: bold;
         font-family: 'Courier New', monospace;
         color: #000;
-    }
-    
-    .qr-name {
-        font-size: {{ layout.font_size_name }}pt;
-        margin-bottom: 12px;
-        font-weight: 600;
-        color: #000;
-        min-height: 20px;
-    }
-    
-    .qr-header {
-        font-size: 16px;
-        margin-bottom: 8px;
-        font-weight: bold;
-        font-family: 'Courier New', monospace;
-        text-align: center;
-    }
-    
-    .qr-image {
-        margin: 12px auto;
-        display: flex;
-        justify-content: center;
-        align-items: center;
-    }
-    
-    .qr-image img {
-        width: {{ layout.qr_size|floatformat:0 }}pt;
-        height: {{ layout.qr_size|floatformat:0 }}pt;
-        image-rendering: -webkit-optimize-contrast;
-        image-rendering: crisp-edges;
-        image-rendering: pixelated;
-        background: white;
-        border-radius: 0;
-        margin-bottom: 0;
-    }
-    
-    .qr-info {
-        margin-top: 12px;
-        font-size: 12px;
-        text-align: center;
-    }
-    
-    .qr-info p {
-        margin: 4px 0;
-        word-wrap: break-word;
-    }
-    
-    .qr-type {
-        display: inline-block;
-        padding: 4px 12px;
-        background: #f0f0f0;
-        border: 1px solid #333;
-        border-radius: 4px;
-        font-size: {{ layout.font_size_badge }}pt;
-        font-weight: bold;
-        margin-top: 8px;
-        text-transform: uppercase;
-        letter-spacing: 0.5px;
-    }
-    
-    .page-break {
-        page-break-after: always;
-        break-after: page;
-    }
-    
-    h2 {
-        font-size: 24px;
-        margin: 20px 0 16px 0;
-        font-weight: bold;
-        color: #000;
-    }
-    
-    /* Print-specific styles */
-    @media print {
-        /* Hide all navigation and UI elements */
-        .no-print,
-        header,
-        nav,
-        .navbar,
-        .sidebar,
-        .page-header,
-        .btn,
-        button,
-        .menu,
-        .navigation,
-        footer,
-        .logout,
-        a[href*="logout"] {
-            display: none !important;
-        }
-        
-        body {
-            background: white !important;
-            color: black !important;
-            margin: 0 !important;
-            padding: 0 !important;
-        }
-        
-        /* Remove any base template styling */
-        * {
-            background: transparent !important;
-        }
-        
-        .container {
-            width: 100% !important;
-            max-width: none !important;
-            padding: 0 !important;
-            margin: 0 !important;
-        }
-        
-        .print-section {
-            padding: {{ layout.margin|floatformat:0 }}pt !important;
-            background: white !important;
-        }
-        
-        .qr-grid {
-            gap: {{ layout.h_gap|floatformat:0 }}pt {{ layout.v_gap|floatformat:0 }}pt;
-        }
-        
-        .qr-card {
-            border: {{ layout.card_border_width }}pt solid #000 !important;
-            box-shadow: none !important;
-            background: white !important;
-        }
-        
-        .qr-image img {
-            background: white !important;
-            image-rendering: -webkit-optimize-contrast !important;
-            image-rendering: crisp-edges !important;
-            image-rendering: pixelated !important;
-            border-radius: 0 !important;
-        }
-        
-        h2 {
-            background: white !important;
-            color: #000 !important;
-        }
-        
-        /* Page setup - Using Python configuration */
-        @page {
-            size: {{ layout.page_width|floatformat:0 }}pt {{ layout.page_height|floatformat:0 }}pt;
-            margin: {{ layout.margin|floatformat:0 }}pt;
-        }
-    }
-    
-    /* Screen view styles */
-    @media screen {
-        .print-section {
-            background: #f5f5f5;
-            padding: 20px;
-            min-height: 100vh;
-        }
-        
-        .container {
-            max-width: 1400px;
-            margin: 0 auto;
-        }
     }
     
     .qr-name {
@@ -290,6 +138,7 @@ All measurements are in MILLIMETERS in the Python file for easy adjustment!
         text-align: center;
     }
     
+    /* QR code image */
     .qr-image {
         margin: 12px auto;
         display: flex;
@@ -298,8 +147,8 @@ All measurements are in MILLIMETERS in the Python file for easy adjustment!
     }
     
     .qr-image img {
-        width: {{ layout.qr_size|floatformat:0 }}pt;
-        height: {{ layout.qr_size|floatformat:0 }}pt;
+        width: 150px;
+        height: 150px;
         image-rendering: -webkit-optimize-contrast;
         image-rendering: crisp-edges;
         image-rendering: pixelated;
@@ -308,6 +157,7 @@ All measurements are in MILLIMETERS in the Python file for easy adjustment!
         margin-bottom: 0;
     }
     
+    /* Info section */
     .qr-info {
         margin-top: 12px;
         font-size: 12px;
@@ -319,6 +169,7 @@ All measurements are in MILLIMETERS in the Python file for easy adjustment!
         word-wrap: break-word;
     }
     
+    /* Badge */
     .qr-type {
         display: inline-block;
         padding: 4px 12px;
@@ -332,11 +183,13 @@ All measurements are in MILLIMETERS in the Python file for easy adjustment!
         letter-spacing: 0.5px;
     }
     
+    /* Page break */
     .page-break {
         page-break-after: always;
         break-after: page;
     }
     
+    /* Headings */
     h2 {
         font-size: 24px;
         margin: 20px 0 16px 0;
@@ -346,7 +199,7 @@ All measurements are in MILLIMETERS in the Python file for easy adjustment!
     
     /* Print-specific styles */
     @media print {
-        /* Hide all navigation and UI elements */
+        /* Hide UI elements */
         .no-print,
         header,
         nav,
@@ -370,7 +223,6 @@ All measurements are in MILLIMETERS in the Python file for easy adjustment!
             padding: 0 !important;
         }
         
-        /* Remove any base template styling */
         * {
             background: transparent !important;
         }
@@ -383,7 +235,7 @@ All measurements are in MILLIMETERS in the Python file for easy adjustment!
         }
         
         .print-section {
-            padding: 15px !important;
+            padding: 15mm !important;
             background: white !important;
         }
         
@@ -398,7 +250,10 @@ All measurements are in MILLIMETERS in the Python file for easy adjustment!
         }
         
         .qr-image img {
-            background: #f8f8f8 !important;
+            background: white !important;
+            image-rendering: -webkit-optimize-contrast !important;
+            image-rendering: crisp-edges !important;
+            image-rendering: pixelated !important;
         }
         
         h2 {
@@ -406,14 +261,13 @@ All measurements are in MILLIMETERS in the Python file for easy adjustment!
             color: #000 !important;
         }
         
-        /* Page setup for A4/Letter */
         @page {
             size: A4;
             margin: 15mm;
         }
     }
     
-    /* Screen view styles */
+    /* Screen view */
     @media screen {
         .print-section {
             background: #f5f5f5;
