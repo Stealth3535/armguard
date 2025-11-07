@@ -115,45 +115,66 @@ armguard/
 ## 🔧 Technical Stack
 
 - **Framework:** Django 5.1.1
-- **Database:** SQLite (default, can be changed to PostgreSQL)
-- **Python:** 3.12
+- **Database:** SQLite (development), PostgreSQL (production)
+- **Python:** 3.12+
 - **Frontend:** HTML5, CSS3, JavaScript
 - **QR Codes:** qrcode library + Pillow
+- **PDF Generation:** ReportLab
+- **Environment Management:** python-decouple
+- **Web Server:** Nginx + Gunicorn (production)
 - **Authentication:** Django built-in auth system
 
 ---
 
 ## 🚀 Installation & Setup
 
-### 1. Install Dependencies
+### Quick Start (Windows Development)
+
 ```bash
 cd "d:\ GUI projects\3\armguard"
 pip install -r requirements.txt
-```
-
-### 2. Run Migrations
-```bash
 python manage.py migrate
-```
-
-### 3. Create Superuser
-```bash
 python manage.py createsuperuser
-```
-
-### 4. Collect Static Files
-```bash
 python manage.py collectstatic
-```
-
-### 5. Run Server
-```bash
 python manage.py runserver
 ```
 
-### 6. Access Application
-- **Main App:** http://127.0.0.1:8000/
-- **Admin Panel:** http://127.0.0.1:8000/admin/
+**Access Application:**
+- Main App: http://127.0.0.1:8000/
+- Admin Panel: http://127.0.0.1:8000/admin/
+
+---
+
+### Ubuntu Server Installation
+
+**Quick Install (5 minutes):**
+
+```bash
+# Clone repository
+sudo apt update && sudo apt install -y git python3 python3-venv python3-pip nginx postgresql
+cd /var/www
+sudo git clone https://github.com/Stealth3535/armguard.git
+cd armguard
+
+# Setup
+python3 -m venv .venv
+source .venv/bin/activate
+pip install -r requirements.txt
+pip install gunicorn psycopg2-binary
+
+# Configure
+cp .env.example .env
+nano .env  # Edit settings
+
+# Deploy
+python manage.py migrate
+python manage.py createsuperuser
+python assign_user_groups.py
+python manage.py collectstatic --noinput
+```
+
+**📖 Detailed Ubuntu/Raspberry Pi Guide:** [UBUNTU_INSTALL.md](UBUNTU_INSTALL.md)  
+**📖 Complete Deployment Guide:** [GITHUB_RASPBERRY_PI_DEPLOYMENT.md](GITHUB_RASPBERRY_PI_DEPLOYMENT.md)
 
 ---
 
