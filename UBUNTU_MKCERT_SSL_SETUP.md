@@ -764,6 +764,337 @@ All with **trusted HTTPS certificates** and **no browser warnings** (after insta
 
 ---
 
+## Performance Optimization for Multiple Apps
+
+Running multiple web apps on a single server (especially on limited hardware like Raspberry Pi) requires optimization to ensure smooth performance.
+
+### 1. Optimize Nginx as a Reverse Proxy
+
+**Enable compression and buffering** in `/etc/nginx/nginx.conf` (inside `http` block):
+
+```nginx
+http {
+    # Gzip compression
+    gzip on;
+    gzip_comp_level 5;
+    gzip_min_length 256;
+    gzip_types
+        text/plain
+        text/css
+        text/javascript
+        application/json
+        application/javascript
+        application/x-javascript
+        text/xml
+        application/xml
+        application/xml+rss;
+
+    # Proxy buffering
+    proxy_buffering on;
+    proxy_buffers 16 4k;
+    proxy_buffer_size 2k;
+
+    # Connection optimizations
+    keepalive_timeout 65;
+    keepalive_requests 100;
+
+    # ... rest of config
+}
+```
+
+**Serve static files directly from Nginx** (don't let Django/Flask handle them):
+
+```nginx
+server {
+    listen 443 ssl http2;
+    server_name armguard.local;
+
+    # Static files - served by Nginx (fast!)
+    location /static/ {
+        alias /home/user/armguard/staticfiles/;
+        expires 30d;
+        add_header Cache-Control "public, immutable";
+    }
+
+    location /media/ {
+        alias /home/user/armguard/media/;
+        expires 7d;
+    }
+
+    # Dynamic content - proxied to Gunicorn
+    location / {
+        proxy_pass http://unix:/run/gunicorn-armguard.sock;
+        proxy_set_header Host $host;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+    }
+}
+```
+
+Apply changes:
+```bash
+sudo nginx -t
+sudo systemctl reload nginx
+```
+
+### 2. Limit Gunicorn Workers and Threads
+
+**Don't over-provision workers** — use the formula: `(2 × CPU cores) + 1`
+
+For a 4-core Raspberry Pi:
+```bash
+# In /etc/systemd/system/gunicorn-armguard.service
+ExecStart=/path/to/venv/bin/gunicorn \
+          --workers 3 \
+          --threads 2 \
+          --timeout 120 \
+          --bind unix:/run/gunicorn-armguard.sock \
+          core.wsgi:application
+```
+
+For lighter apps or limited RAM:
+```bash
+ExecStart=/path/to/venv/bin/gunicorn \
+          --workers 2 \
+          --threads 2 \
+          --max-requests 1000 \
+          --max-requests-jitter 50 \
+          --bind unix:/run/gunicorn-inventory.sock \
+          inventory.wsgi:application
+```
+
+**`--max-requests`**: Restart worker after N requests (prevents memory leaks)
+
+Reload after changes:
+```bash
+sudo systemctl daemon-reload
+sudo systemctl restart gunicorn-armguard
+```
+
+### 3. Use Lightweight Databases
+
+**For small to medium apps**:
+- ✅ **SQLite** (default Django) — no separate server process, low overhead
+- ✅ **TinyDB** (Python JSON DB) — for simple data
+- ❌ Avoid PostgreSQL/MySQL unless you need multi-user concurrency or large datasets
+
+**If using PostgreSQL/MySQL**, limit memory usage:
+
+PostgreSQL (`/etc/postgresql/*/main/postgresql.conf`):
+```ini
+shared_buffers = 128MB          # Lower for limited RAM
+effective_cache_size = 512MB
+work_mem = 4MB
+maintenance_work_mem = 64MB
+max_connections = 20            # Limit connections
+```
+
+MySQL (`/etc/mysql/mysql.conf.d/mysqld.cnf`):
+```ini
+innodb_buffer_pool_size = 128M  # Lower for limited RAM
+max_connections = 50
+```
+
+Restart database after changes:
+```bash
+sudo systemctl restart postgresql  # or mysql
+```
+
+### 4. Enable Swap File (Safety Net for RAM Spikes)
+
+**On Raspberry Pi or low-RAM servers**, add swap to prevent crashes:
+
+```bash
+# Check current swap
+free -h
+
+# Configure swap (Raspberry Pi)
+sudo dphys-swapfile swapoff
+sudo nano /etc/dphys-swapfile
+```
+
+Edit `CONF_SWAPSIZE`:
+```
+CONF_SWAPSIZE=1024  # 1GB swap (adjust based on your needs)
+```
+
+Apply:
+```bash
+sudo dphys-swapfile setup
+sudo dphys-swapfile swapon
+free -h  # Verify swap is active
+```
+
+**For Ubuntu Server** (non-Raspberry Pi):
+```bash
+# Create 2GB swap file
+sudo fallocate -l 2G /swapfile
+sudo chmod 600 /swapfile
+sudo mkswap /swapfile
+sudo swapon /swapfile
+
+# Make permanent
+echo '/swapfile none swap sw 0 0' | sudo tee -a /etc/fstab
+
+# Verify
+free -h
+```
+
+⚠️ **Note**: Swap on SD cards is slower than RAM but prevents out-of-memory crashes.
+
+### 5. Monitor and Clean System Resources
+
+**Install monitoring tools**:
+```bash
+sudo apt install htop iotop
+```
+
+**Monitor in real-time**:
+```bash
+htop           # CPU, RAM, processes
+iotop          # Disk I/O
+sudo journalctl -u gunicorn-armguard -f  # App logs
+```
+
+**Clean up unused packages**:
+```bash
+sudo apt autoremove
+sudo apt autoclean
+sudo apt clean
+```
+
+**Set up auto-restart for crashed services**:
+
+In each Gunicorn systemd service, add:
+```ini
+[Service]
+Restart=always
+RestartSec=3
+```
+
+Example:
+```ini
+[Unit]
+Description=gunicorn daemon for armguard
+After=network.target
+
+[Service]
+User=www-data
+Group=www-data
+WorkingDirectory=/home/user/armguard
+Environment="PATH=/home/user/armguard/venv/bin"
+ExecStart=/home/user/armguard/venv/bin/gunicorn \
+          --workers 3 \
+          --threads 2 \
+          --bind unix:/run/gunicorn-armguard.sock \
+          core.wsgi:application
+Restart=always
+RestartSec=3
+
+[Install]
+WantedBy=multi-user.target
+```
+
+Reload and restart:
+```bash
+sudo systemctl daemon-reload
+sudo systemctl restart gunicorn-armguard
+```
+
+### 6. Optimize Django Settings for Production
+
+In `core/settings.py`:
+
+```python
+# Disable debug (already done)
+DEBUG = False
+
+# Use persistent connections (reduces DB overhead)
+DATABASES = {
+    'default': {
+        'ENGINE': 'django.db.backends.sqlite3',
+        'NAME': BASE_DIR / 'db.sqlite3',
+        'CONN_MAX_AGE': 600,  # Reuse connections for 10 minutes
+    }
+}
+
+# Session caching (reduces DB queries)
+SESSION_ENGINE = 'django.contrib.sessions.backends.cached_db'
+
+# Cache static file references
+STATICFILES_STORAGE = 'django.contrib.staticfiles.storage.ManifestStaticFilesStorage'
+
+# Logging (optional - helps debug performance issues)
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    'handlers': {
+        'file': {
+            'level': 'WARNING',
+            'class': 'logging.FileHandler',
+            'filename': '/var/log/armguard/django.log',
+        },
+    },
+    'loggers': {
+        'django': {
+            'handlers': ['file'],
+            'level': 'WARNING',
+            'propagate': True,
+        },
+    },
+}
+```
+
+Create log directory:
+```bash
+sudo mkdir -p /var/log/armguard
+sudo chown www-data:www-data /var/log/armguard
+```
+
+### 7. Use PM2 for Node.js Apps (if applicable)
+
+If running Node.js apps alongside Django:
+
+```bash
+# Install PM2
+sudo npm install -g pm2
+
+# Start app with limited instances
+pm2 start app.js -i 2 --name "node-app"
+
+# Auto-restart on crash
+pm2 startup systemd
+pm2 save
+
+# Monitor
+pm2 monit
+```
+
+### Performance Checklist
+
+- ✅ Nginx serves static files (not Django/Flask)
+- ✅ Gzip compression enabled in Nginx
+- ✅ Gunicorn workers limited to `(2 × CPU) + 1`
+- ✅ Database connections optimized (`CONN_MAX_AGE`)
+- ✅ Swap file configured (1-2GB)
+- ✅ Auto-restart enabled for services
+- ✅ `DEBUG = False` in Django
+- ✅ Regular cleanup (`apt autoremove`)
+- ✅ Monitoring tools installed (`htop`)
+
+### Expected Performance
+
+With these optimizations on a Raspberry Pi 4 (4GB RAM):
+- **2-3 Django apps**: Smooth, <100MB RAM per app
+- **5+ apps**: Possible with swap and careful worker limits
+- **Response time**: <200ms for cached pages, <500ms for dynamic
+
+On a dedicated Ubuntu Server (2GB+ RAM):
+- **5-10 apps**: No issues with proper configuration
+- **Response time**: <100ms for most requests
+
+---
+
 ## Quick Reference: Service Management
 
 ```bash
