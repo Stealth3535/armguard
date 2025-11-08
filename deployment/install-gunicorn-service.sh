@@ -93,8 +93,6 @@ ExecStart=${VENV_DIR}/bin/gunicorn \\
           --workers ${WORKERS} \\
           --bind unix:/run/${SERVICE_NAME}.sock \\
           --timeout 60 \\
-          --user ${RUN_USER} \\
-          --group ${RUN_GROUP} \\
           --access-logfile ${LOG_DIR}/access.log \\
           --error-logfile ${LOG_DIR}/error.log \\
           --log-level info \\

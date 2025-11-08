@@ -408,8 +408,6 @@ ExecStart=${PROJECT_DIR}/.venv/bin/gunicorn \\
           --workers ${WORKERS} \\
           --bind unix:/run/gunicorn-armguard.sock \\
           --timeout 60 \\
-          --user ${RUN_USER} \\
-          --group ${RUN_GROUP} \\
           --access-logfile /var/log/armguard/access.log \\
           --error-logfile /var/log/armguard/error.log \\
           --log-level info \\
