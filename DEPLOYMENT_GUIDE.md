@@ -58,6 +58,25 @@ Access the application at: `http://127.0.0.1:8000/`
 
 ## Production Deployment
 
+### Architecture Overview
+
+**System-wide installations** (shared across all apps):
+- ✅ **Nginx** - Reverse proxy and web server
+- ✅ **mkcert** - SSL certificate tool for LAN deployments
+
+**Virtual environment** (per-app):
+- ✅ **Gunicorn** - WSGI HTTP server (each app has its own version)
+- ✅ Django and app-specific dependencies (from `requirements.txt`)
+
+**Why this approach?**
+- One Nginx installation routes to multiple apps
+- Each app runs in isolation with its own Gunicorn version
+- Prevents dependency conflicts between apps
+- Easy to update/maintain individual apps without affecting others
+- Supports both LAN and public-facing apps on the same server
+
+---
+
 ### Option A: Windows Server (IIS + wfastcgi)
 
 #### 1. Install Dependencies
@@ -133,7 +152,13 @@ Create `web.config` in project root:
 ```bash
 sudo apt update
 sudo apt install python3.12 python3-pip python3-venv nginx
+
+# Start and enable Nginx
+sudo systemctl start nginx
+sudo systemctl enable nginx
 ```
+
+**Note:** Nginx is installed **system-wide** to serve as a reverse proxy for all apps. Gunicorn will be installed in each app's virtual environment.
 
 #### 2. Setup Application
 
@@ -150,9 +175,8 @@ cd /var/www/armguard
 python3 -m venv .venv
 source .venv/bin/activate
 
-# Install dependencies
+# Install dependencies (includes Gunicorn)
 pip install -r requirements.txt
-pip install gunicorn
 ```
 
 #### 3. Configure Environment
@@ -214,7 +238,7 @@ python manage.py migrate
 
 #### 6. Create Systemd Service
 
-Create `/etc/systemd/system/armguard.service`:
+Create `/etc/systemd/system/gunicorn-armguard.service`:
 ```ini
 [Unit]
 Description=ArmGuard Gunicorn daemon
@@ -229,18 +253,31 @@ Environment="DJANGO_SETTINGS_MODULE=core.settings_production"
 EnvironmentFile=/var/www/armguard/.env
 ExecStart=/var/www/armguard/.venv/bin/gunicorn \
     --workers 3 \
-    --bind unix:/var/www/armguard/armguard.sock \
+    --bind unix:/run/gunicorn-armguard.sock \
     core.wsgi:application
+Restart=always
+RestartSec=3
 
 [Install]
 WantedBy=multi-user.target
 ```
 
-Start service:
+**Key points:**
+- Uses Gunicorn from the app's virtual environment (`.venv/bin/gunicorn`)
+- Each app has its own Gunicorn version, preventing dependency conflicts
+- Socket path includes app name (`gunicorn-armguard.sock`) for multi-app support
+- Auto-restart on failure ensures high availability
+
+Set permissions and start service:
 ```bash
-sudo systemctl start armguard
-sudo systemctl enable armguard
-sudo systemctl status armguard
+# Set proper ownership
+sudo chown -R www-data:www-data /var/www/armguard
+
+# Start and enable service
+sudo systemctl daemon-reload
+sudo systemctl start gunicorn-armguard
+sudo systemctl enable gunicorn-armguard
+sudo systemctl status gunicorn-armguard
 ```
 
 #### 7. Configure Nginx
@@ -255,15 +292,21 @@ server {
     
     location /static/ {
         alias /var/www/armguard/staticfiles/;
+        expires 30d;
+        add_header Cache-Control "public, immutable";
     }
 
     location /media/ {
-        alias /var/www/armguard/core/media/;
+        alias /var/www/armguard/media/;
+        expires 7d;
     }
 
     location / {
-        include proxy_params;
-        proxy_pass http://unix:/var/www/armguard/armguard.sock;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_pass http://unix:/run/gunicorn-armguard.sock;
     }
 }
 ```
@@ -275,11 +318,30 @@ sudo nginx -t
 sudo systemctl restart nginx
 ```
 
-#### 8. SSL Certificate (Let's Encrypt)
+#### 8. SSL Certificate
 
+**For Public Domains (Let's Encrypt):**
 ```bash
 sudo apt install certbot python3-certbot-nginx
 sudo certbot --nginx -d your-domain.com
+```
+
+**For LAN/Local Deployments (mkcert):**
+
+See the comprehensive guide: [UBUNTU_MKCERT_SSL_SETUP.md](./UBUNTU_MKCERT_SSL_SETUP.md)
+
+Quick setup:
+```bash
+# Install mkcert (system-wide)
+wget https://github.com/FiloSottile/mkcert/releases/download/v1.4.4/mkcert-v1.4.4-linux-amd64
+sudo mv mkcert-v1.4.4-linux-amd64 /usr/local/bin/mkcert
+sudo chmod +x /usr/local/bin/mkcert
+
+# Create CA and generate certificates
+mkcert -install
+mkcert your-server-ip localhost 127.0.0.1
+
+# Follow UBUNTU_MKCERT_SSL_SETUP.md for complete configuration
 ```
 
 ---
@@ -396,7 +458,8 @@ python manage.py migrate
 python manage.py collectstatic --noinput
 
 # Restart service (Linux)
-sudo systemctl restart armguard
+sudo systemctl restart gunicorn-armguard
+sudo systemctl reload nginx
 
 # Restart IIS (Windows)
 iisreset
@@ -406,7 +469,8 @@ iisreset
 
 ```bash
 # Gunicorn logs
-sudo journalctl -u armguard -f
+sudo journalctl -u gunicorn-armguard -f
+sudo journalctl -u gunicorn-armguard -n 50  # Last 50 lines
 
 # Nginx logs
 sudo tail -f /var/log/nginx/error.log
@@ -414,6 +478,10 @@ sudo tail -f /var/log/nginx/access.log
 
 # Django logs
 tail -f logs/django_errors.log
+
+# Check service status
+sudo systemctl status gunicorn-armguard
+sudo systemctl status nginx
 ```
 
 ---
@@ -462,4 +530,12 @@ For issues or questions:
 
 ---
 
-**Last Updated:** November 5, 2025
+## Additional Resources
+
+- **LAN/Local SSL Setup**: [UBUNTU_MKCERT_SSL_SETUP.md](./UBUNTU_MKCERT_SSL_SETUP.md)
+- **Ubuntu Quick Install**: [UBUNTU_INSTALL.md](./UBUNTU_INSTALL.md)
+- **Security Hardening**: [SECURITY_FIXES_APPLIED.md](./SECURITY_FIXES_APPLIED.md)
+
+---
+
+**Last Updated:** November 8, 2025

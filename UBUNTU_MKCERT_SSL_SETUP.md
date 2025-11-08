@@ -27,17 +27,14 @@ This guide shows you how to set up **secure HTTPS** for your Django app on a **l
 
 ## Part 1: Server Setup (Ubuntu)
 
-### 1) Install Nginx, Gunicorn, and dependencies (system-wide)
+### 1) Install Nginx and dependencies
 
 ```bash
 # Update package list
 sudo apt update
 
-# Install Nginx, Python, Gunicorn (system-wide), and required tools
-sudo apt install -y nginx python3-pip python3-venv wget libnss3-tools gunicorn
-
-# Alternative: Install Gunicorn via pip3 system-wide if apt version is outdated
-# sudo pip3 install gunicorn
+# Install Nginx, Python, and required tools
+sudo apt install -y nginx python3-pip python3-venv wget libnss3-tools
 
 # Start and enable Nginx
 sudo systemctl start nginx
@@ -45,19 +42,16 @@ sudo systemctl enable nginx
 
 # Check status
 sudo systemctl status nginx
-
-# Verify Gunicorn is installed system-wide
-which gunicorn
-gunicorn --version
 ```
 
-**Why system-wide installation?**
-- ✅ One Gunicorn installation serves all apps (less duplication)
-- ✅ Easier to manage multiple apps on one server
-- ✅ Works for both LAN and public-facing apps
-- ✅ Each app still uses its own virtual environment for dependencies
+**Why this approach?**
+- ✅ Nginx installed system-wide (reverse proxy for all apps)
+- ✅ Gunicorn installed per-app in virtual environments (better isolation)
+- ✅ Each app can use different Gunicorn versions
+- ✅ Prevents dependency conflicts between apps
+- ✅ Easy to manage and update apps independently
 
-### 2) Create Gunicorn systemd service (using system-wide Gunicorn)
+### 2) Create Gunicorn systemd service
 
 Create `/etc/systemd/system/gunicorn-armguard.service`:
 
@@ -76,9 +70,8 @@ After=network.target
 User=www-data
 Group=www-data
 WorkingDirectory=/home/your-username/armguard
-Environment="PATH=/home/your-username/armguard/venv/bin:/usr/bin"
-ExecStart=/usr/bin/gunicorn \
-          --pythonpath /home/your-username/armguard \
+Environment="PATH=/home/your-username/armguard/venv/bin"
+ExecStart=/home/your-username/armguard/venv/bin/gunicorn \
           --workers 3 \
           --bind unix:/run/gunicorn-armguard.sock \
           core.wsgi:application
@@ -89,10 +82,10 @@ RestartSec=3
 WantedBy=multi-user.target
 ```
 
-**Key changes for system-wide Gunicorn**:
-- Uses `/usr/bin/gunicorn` (system-wide, not venv)
-- `--pythonpath` points to your project directory
-- Environment PATH includes both venv/bin (for app dependencies) and /usr/bin (for Gunicorn)
+**Key configuration details**:
+- Uses Gunicorn from the app's virtual environment (`venv/bin/gunicorn`)
+- Each app has its own Gunicorn version (installed via `requirements.txt`)
+- Unique socket path per app (e.g., `/run/gunicorn-armguard.sock`)
 - Each app gets its own service name (e.g., `gunicorn-armguard.service`, `gunicorn-app2.service`)
 
 **Important**: Replace `/home/your-username/armguard` with your actual project path.
@@ -343,7 +336,7 @@ cd online-app
 # Create virtual environment and install dependencies
 python3 -m venv venv
 source venv/bin/activate
-pip install -r requirements.txt
+pip install -r requirements.txt  # This should include gunicorn
 pip install python-decouple
 
 # Set up .env file
@@ -364,9 +357,8 @@ After=network.target
 User=www-data
 Group=www-data
 WorkingDirectory=/home/your-username/online-app
-Environment="PATH=/home/your-username/online-app/venv/bin:/usr/bin"
-ExecStart=/usr/bin/gunicorn \
-          --pythonpath /home/your-username/online-app \
+Environment="PATH=/home/your-username/online-app/venv/bin"
+ExecStart=/home/your-username/online-app/venv/bin/gunicorn \
           --workers 3 \
           --bind unix:/run/gunicorn-online.sock \
           core.wsgi:application
@@ -445,26 +437,29 @@ sudo systemctl reload nginx
 ┌─────────────────────────────────────────┐
 │  Server (192.168.1.100)                 │
 │                                         │
-│  Nginx (port 80/443)                    │
+│  Nginx (port 80/443) - system-wide      │
 │  ├─ armguard.local (mkcert)             │
 │  │  → /run/gunicorn-armguard.sock      │
+│  │     (venv1/bin/gunicorn)             │
 │  │                                      │
 │  └─ yourdomain.com (Let's Encrypt)      │
 │     → /run/gunicorn-online.sock        │
+│        (venv2/bin/gunicorn)             │
 │                                         │
-│  System-wide:                           │
-│  - /usr/bin/gunicorn                    │
-│  - /usr/local/bin/mkcert                │
-│  - nginx                                │
+│  Per-app virtual environments:          │
+│  - App1: venv with gunicorn + deps      │
+│  - App2: venv with gunicorn + deps      │
+│  - mkcert (system-wide)                 │
 └─────────────────────────────────────────┘
 ```
 
 **Key points**:
 - ✅ One Nginx installation handles both apps
-- ✅ One Gunicorn binary (system-wide) runs multiple services
+- ✅ Each app has its own Gunicorn in its venv (better isolation)
 - ✅ LAN app uses mkcert certificates
 - ✅ Online app uses Let's Encrypt certificates
 - ✅ Each app has its own systemd service and socket
+- ✅ No dependency conflicts between apps
 - ✅ Easy to add more apps (just repeat the pattern)
 
 ---

@@ -19,7 +19,7 @@ Quick installation guide for Ubuntu Server (including Raspberry Pi Ubuntu Server
 # 1. Update system
 sudo apt update && sudo apt upgrade -y
 
-# 2. Install dependencies
+# 2. Install system dependencies
 sudo apt install -y python3 python3-pip python3-venv git nginx postgresql postgresql-contrib
 
 # 3. Install image libraries (for QR code generation)
@@ -35,10 +35,10 @@ cd armguard
 python3 -m venv .venv
 source .venv/bin/activate
 
-# 6. Install Python packages
+# 6. Install Python packages (includes Gunicorn)
 pip install --upgrade pip
 pip install -r requirements.txt
-pip install gunicorn psycopg2-binary
+pip install psycopg2-binary
 
 # 7. Configure environment
 cp .env.example .env
@@ -54,6 +54,8 @@ python manage.py collectstatic --noinput
 # 9. Test
 python manage.py check --deploy
 ```
+
+**Note:** Gunicorn is installed in each app's virtual environment for better isolation when running multiple apps.
 
 ---
 
@@ -74,7 +76,7 @@ GRANT ALL PRIVILEGES ON DATABASE armguard_db TO armguard_user;
 ### 2. Create Gunicorn Service
 
 ```bash
-sudo nano /etc/systemd/system/gunicorn.service
+sudo nano /etc/systemd/system/gunicorn-armguard.service
 ```
 
 Add:
@@ -85,19 +87,30 @@ Description=Gunicorn daemon for ArmGuard
 After=network.target
 
 [Service]
-User=YOUR_USERNAME
+User=www-data
 Group=www-data
 WorkingDirectory=/var/www/armguard
 Environment="PATH=/var/www/armguard/.venv/bin"
-ExecStart=/var/www/armguard/.venv/bin/gunicorn --workers 3 --bind unix:/var/www/armguard/gunicorn.sock core.wsgi:application
+ExecStart=/var/www/armguard/.venv/bin/gunicorn \
+    --workers 3 \
+    --bind unix:/run/gunicorn-armguard.sock \
+    core.wsgi:application
+Restart=always
+RestartSec=3
 
 [Install]
 WantedBy=multi-user.target
 ```
 
 ```bash
-sudo systemctl start gunicorn
-sudo systemctl enable gunicorn
+# Set permissions
+sudo chown -R www-data:www-data /var/www/armguard
+
+# Start and enable service
+sudo systemctl daemon-reload
+sudo systemctl start gunicorn-armguard
+sudo systemctl enable gunicorn-armguard
+sudo systemctl status gunicorn-armguard
 ```
 
 ### 3. Configure Nginx
@@ -115,15 +128,21 @@ server {
 
     location /static/ {
         alias /var/www/armguard/staticfiles/;
+        expires 30d;
+        add_header Cache-Control "public, immutable";
     }
 
     location /media/ {
-        alias /var/www/armguard/core/media/;
+        alias /var/www/armguard/media/;
+        expires 7d;
     }
 
     location / {
-        include proxy_params;
-        proxy_pass http://unix:/var/www/armguard/gunicorn.sock;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_pass http://unix:/run/gunicorn-armguard.sock;
     }
 }
 ```
@@ -156,15 +175,16 @@ Admin panel: `http://YOUR_SERVER_IP/admin/`
 
 ```bash
 # Check status
-sudo systemctl status gunicorn
+sudo systemctl status gunicorn-armguard
 sudo systemctl status nginx
 
 # Restart services
-sudo systemctl restart gunicorn
-sudo systemctl restart nginx
+sudo systemctl restart gunicorn-armguard
+sudo systemctl reload nginx
 
 # View logs
-sudo journalctl -u gunicorn -f
+sudo journalctl -u gunicorn-armguard -f
+sudo journalctl -u gunicorn-armguard -n 50  # Last 50 lines
 sudo tail -f /var/log/nginx/error.log
 
 # Update from GitHub
@@ -174,7 +194,7 @@ source .venv/bin/activate
 pip install -r requirements.txt
 python manage.py migrate
 python manage.py collectstatic --noinput
-sudo systemctl restart gunicorn
+sudo systemctl restart gunicorn-armguard
 ```
 
 ---
@@ -189,16 +209,24 @@ sudo systemctl restart nginx
 
 **Gunicorn not starting:**
 ```bash
-sudo journalctl -u gunicorn -n 50
-sudo systemctl restart gunicorn
+sudo journalctl -u gunicorn-armguard -n 50
+sudo systemctl restart gunicorn-armguard
 ```
 
 **Database errors:**
 ```bash
 python manage.py migrate
-sudo systemctl restart gunicorn
+sudo systemctl restart gunicorn-armguard
 ```
 
 ---
 
-For detailed deployment guide, see: [GITHUB_RASPBERRY_PI_DEPLOYMENT.md](GITHUB_RASPBERRY_PI_DEPLOYMENT.md)
+## SSL/HTTPS Setup
+
+**For LAN/Local deployments**, see: [UBUNTU_MKCERT_SSL_SETUP.md](./UBUNTU_MKCERT_SSL_SETUP.md)
+
+**For public deployments**, see: [DEPLOYMENT_GUIDE.md](./DEPLOYMENT_GUIDE.md) (Let's Encrypt section)
+
+---
+
+For detailed deployment guide, see: [DEPLOYMENT_GUIDE.md](./DEPLOYMENT_GUIDE.md)

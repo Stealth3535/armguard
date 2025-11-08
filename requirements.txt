@@ -2,6 +2,9 @@
 Django>=5.1.1
 python-decouple>=3.8
 
+# WSGI HTTP server (each app gets its own version in venv)
+gunicorn>=21.2.0
+
 # Image processing and QR code generation
 Pillow>=10.0.0
 qrcode>=7.4.2
@@ -10,6 +13,5 @@ qrcode>=7.4.2
 reportlab>=4.0.0
 
 # Note: The following are installed system-wide on the server (not via pip):
-# - Gunicorn (via apt install gunicorn)
-# - Nginx (via apt install nginx)
-# - mkcert (manual installation from GitHub releases)
+# - Nginx (via apt install nginx) - reverse proxy for all apps
+# - mkcert (manual installation from GitHub releases) - SSL certificates for LAN
