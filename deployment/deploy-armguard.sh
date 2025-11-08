@@ -396,18 +396,20 @@ Documentation=https://github.com/Stealth3535/armguard
 After=network.target
 
 [Service]
-Type=notify
+Type=exec
 User=${RUN_USER}
 Group=${RUN_GROUP}
 WorkingDirectory=${PROJECT_DIR}
-Environment="PATH=${PROJECT_DIR}/.venv/bin"
+Environment="PATH=${PROJECT_DIR}/.venv/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
 Environment="DJANGO_SETTINGS_MODULE=core.settings_production"
-EnvironmentFile=${PROJECT_DIR}/.env
+EnvironmentFile=-${PROJECT_DIR}/.env
 
 ExecStart=${PROJECT_DIR}/.venv/bin/gunicorn \\
           --workers ${WORKERS} \\
           --bind unix:/run/gunicorn-armguard.sock \\
           --timeout 60 \\
+          --user ${RUN_USER} \\
+          --group ${RUN_GROUP} \\
           --access-logfile /var/log/armguard/access.log \\
           --error-logfile /var/log/armguard/error.log \\
           --log-level info \\
