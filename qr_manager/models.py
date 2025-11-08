@@ -4,16 +4,21 @@ Handles QR code generation and management using unified qr_generator
 """
 from django.db import models
 from django.utils import timezone
+from django.utils.text import get_valid_filename
 from django.core.files import File
 from utils.qr_generator import generate_qr_code_to_buffer
+import os
 
 
 def qr_upload_path(instance, filename):
-    """Dynamic upload path based on QR type"""
+    """Dynamic upload path based on QR type - sanitized to prevent path traversal"""
+    # Sanitize filename to prevent path traversal attacks
+    safe_filename = get_valid_filename(os.path.basename(filename))
+    
     if instance.qr_type == 'item':
-        return f'qr_codes/items/{filename}'
+        return f'qr_codes/items/{safe_filename}'
     else:
-        return f'qr_codes/{instance.qr_type}/{filename}'
+        return f'qr_codes/{instance.qr_type}/{safe_filename}'
 
 
 class QRCodeImage(models.Model):

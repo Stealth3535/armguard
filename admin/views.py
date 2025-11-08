@@ -346,12 +346,12 @@ def edit_user(request, user_id):
                 'office': personnel.office,
                 'tel': personnel.tel,
             })
-            # Debug: print to console
-            print(f"DEBUG: Editing user {edit_user_obj.username}")
-            print(f"DEBUG: Personnel found: {personnel.id}")
-            print(f"DEBUG: Initial data: {initial_data}")
-        else:
-            print(f"DEBUG: No personnel found for user {edit_user_obj.username}")
+            # Use logging instead of print for debugging
+            import logging
+            logger = logging.getLogger(__name__)
+            logger.debug(f"Editing user {edit_user_obj.username}")
+            logger.debug(f"Personnel found: {personnel.id}")
+            logger.debug(f"Initial data: {initial_data}")
         
         form = UserRegistrationForm(initial=initial_data, current_personnel=personnel)
     

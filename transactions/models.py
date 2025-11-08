@@ -90,6 +90,22 @@ class Transaction(models.Model):
     def save(self, *args, **kwargs):
         """Override save to update item status based on action"""
         is_new = self.pk is None
+        
+        # Validate transaction before saving
+        if is_new:
+            if self.action == self.ACTION_TAKE:
+                # Cannot take item that's already issued
+                if self.item.status == Item.STATUS_ISSUED:
+                    raise ValueError(f"Cannot take item {self.item.id} - already issued")
+                # Cannot take item in maintenance or retired
+                if self.item.status in [Item.STATUS_MAINTENANCE, Item.STATUS_RETIRED]:
+                    raise ValueError(f"Cannot take item {self.item.id} - status is {self.item.status}")
+            
+            elif self.action == self.ACTION_RETURN:
+                # Cannot return item that's not issued
+                if self.item.status != Item.STATUS_ISSUED:
+                    raise ValueError(f"Cannot return item {self.item.id} - not currently issued")
+        
         super().save(*args, **kwargs)
         
         # Update item status after saving transaction

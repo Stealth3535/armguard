@@ -1,9 +1,11 @@
 from django import forms
 from django.contrib.auth.models import User, Group
 from django.db.models import Q
+from django.core.exceptions import ValidationError
 from personnel.models import Personnel
 from inventory.models import Item
 from django.core.validators import RegexValidator
+from PIL import Image
 
 
 class UserRegistrationForm(forms.Form):
@@ -92,6 +94,25 @@ class UserRegistrationForm(forms.Form):
         widget=forms.TextInput(attrs={'placeholder': '+639XXXXXXXXX'})
     )
     picture = forms.ImageField(required=False, label='Picture')
+    
+    def clean_picture(self):
+        """Validate uploaded image file"""
+        picture = self.cleaned_data.get('picture')
+        if picture:
+            # Validate file size (max 5MB)
+            if picture.size > 5 * 1024 * 1024:
+                raise ValidationError('Image file too large. Maximum size is 5MB.')
+            
+            # Validate file is actually an image
+            try:
+                img = Image.open(picture)
+                img.verify()
+                # Reset file pointer after verify
+                picture.seek(0)
+            except Exception:
+                raise ValidationError('Invalid image file. Please upload a valid image.')
+        
+        return picture
     
     def clean(self):
         cleaned_data = super().clean()

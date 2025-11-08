@@ -3,7 +3,7 @@ Personnel Models for ArmGuard
 Based on APP/app/backend/database.py personnel table
 """
 from django.db import models
-from django.core.validators import RegexValidator
+from django.core.validators import RegexValidator, FileExtensionValidator
 from django.utils import timezone
 from django.contrib.auth.models import User
 
@@ -90,7 +90,12 @@ class Personnel(models.Model):
     registration_date = models.DateField(default=timezone.now)
     qr_code = models.CharField(max_length=255, blank=True)
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default=STATUS_ACTIVE)
-    picture = models.ImageField(upload_to='personnel/pictures/', blank=True, null=True)
+    picture = models.ImageField(
+        upload_to='personnel/pictures/', 
+        blank=True, 
+        null=True,
+        validators=[FileExtensionValidator(allowed_extensions=['jpg', 'jpeg', 'png', 'gif'])]
+    )
     
     # Timestamps
     created_at = models.DateTimeField(auto_now_add=True)

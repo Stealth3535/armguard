@@ -3,7 +3,7 @@ API Views for AJAX requests
 """
 from django.http import JsonResponse
 from django.views.decorators.http import require_http_methods
-from django.views.decorators.csrf import csrf_exempt
+from django.contrib.auth.decorators import login_required
 from personnel.models import Personnel
 from inventory.models import Item
 from transactions.models import Transaction
@@ -14,9 +14,13 @@ from .utils import (
     validate_transaction_action
 )
 import json
+import logging
+
+logger = logging.getLogger(__name__)
 
 
 @require_http_methods(["GET"])
+@login_required
 def get_personnel(request, personnel_id):
     """Get personnel details by ID (supports both direct ID and QR reference)"""
     result = parse_qr_code(personnel_id)
@@ -30,6 +34,7 @@ def get_personnel(request, personnel_id):
 
 
 @require_http_methods(["GET"])
+@login_required
 def get_item(request, item_id):
     """Get item details by ID (supports both direct ID and QR reference)"""
     result = parse_qr_code(item_id)
@@ -49,9 +54,13 @@ def get_item(request, item_id):
 
 
 @require_http_methods(["POST"])
-@csrf_exempt
+@login_required
 def create_transaction(request):
     """Create a new transaction"""
+    # Validate Content-Type
+    if request.content_type != 'application/json':
+        return JsonResponse({'error': 'Content-Type must be application/json'}, status=415)
+    
     try:
         data = json.loads(request.body)
         personnel_id = data.get('personnel_id')
@@ -107,5 +116,13 @@ def create_transaction(request):
         
     except json.JSONDecodeError:
         return JsonResponse({'error': 'Invalid JSON'}, status=400)
+    except Personnel.DoesNotExist:
+        return JsonResponse({'error': 'Personnel not found'}, status=404)
+    except Item.DoesNotExist:
+        return JsonResponse({'error': 'Item not found'}, status=404)
+    except ValueError as e:
+        logger.warning(f"Transaction validation error: {str(e)}")
+        return JsonResponse({'error': str(e)}, status=400)
     except Exception as e:
-        return JsonResponse({'error': str(e)}, status=500)
+        logger.error(f"Transaction creation failed: {str(e)}", exc_info=True)
+        return JsonResponse({'error': 'Internal server error'}, status=500)
