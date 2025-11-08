@@ -1,214 +1,425 @@
-# ArmGuard System - Complete Documentation Index
+# ArmGuard Documentation Index# ArmGuard System - Complete Documentation Index
 
-**Project:** ArmGuard Military Armory Management System  
-**Version:** 1.0.0  
-**Last Updated:** November 5, 2025  
+
+
+**Version:** 1.0.0  **Project:** ArmGuard Military Armory Management System  
+
+**Status:** Production Ready  **Version:** 1.0.0  
+
+**Last Updated:** November 8, 2025**Last Updated:** November 5, 2025  
+
 **Status:** ✅ Production-Ready
+
+---
 
 ---
 
 ## 📚 Quick Navigation
 
+## 📚 Quick Navigation
+
+### Core Documentation
+
 | Document | Purpose | Audience | Priority |
-|----------|---------|----------|----------|
-| [README.md](#readme) | Project overview | Everyone | ⭐⭐⭐ |
-| [SYSTEM_FLOWCHART.md](#flowchart) | Visual system architecture | Developers, Architects | ⭐⭐⭐ |
-| [CODE_REVIEW_REPORT.md](#code-review) | Technical audit | Developers, Managers | ⭐⭐⭐ |
-| [SECURITY_FIXES_APPLIED.md](#security) | Security implementation | DevOps, Admins | ⭐⭐⭐ |
-| [DEPLOYMENT_GUIDE.md](#deployment) | Production deployment | DevOps, System Admins | ⭐⭐⭐ |
+
+| Document | Purpose | For ||----------|---------|----------|----------|
+
+|----------|---------|-----|| [README.md](#readme) | Project overview | Everyone | ⭐⭐⭐ |
+
+| **[README.md](README.md)** | Project overview & quick start | Everyone || [SYSTEM_FLOWCHART.md](#flowchart) | Visual system architecture | Developers, Architects | ⭐⭐⭐ |
+
+| **[DEPLOYMENT_GUIDE.md](DEPLOYMENT_GUIDE.md)** | Production deployment instructions | DevOps || [CODE_REVIEW_REPORT.md](#code-review) | Technical audit | Developers, Managers | ⭐⭐⭐ |
+
+| **[ADMIN_GUIDE.md](ADMIN_GUIDE.md)** | Administrative operations | Admins || [SECURITY_FIXES_APPLIED.md](#security) | Security implementation | DevOps, Admins | ⭐⭐⭐ |
+
+| **[TESTING_GUIDE.md](TESTING_GUIDE.md)** | Testing procedures | QA/Developers || [DEPLOYMENT_GUIDE.md](#deployment) | Production deployment | DevOps, System Admins | ⭐⭐⭐ |
+
 | [ADMIN_GUIDE.md](#admin) | Administrative tasks | System Admins | ⭐⭐ |
-| [TESTING_GUIDE.md](#testing) | Testing procedures | QA, Developers | ⭐⭐ |
+
+### Security Documentation| [TESTING_GUIDE.md](#testing) | Testing procedures | QA, Developers | ⭐⭐ |
+
 | [CLEANUP_SUMMARY.md](#cleanup) | Changes summary | Project Managers | ⭐ |
 
----
+| Document | Purpose |
 
-## 📖 Document Summaries
+|----------|---------|---
 
-### <a name="readme"></a>README.md
+| **[COMPREHENSIVE_SECURITY_AUDIT.md](COMPREHENSIVE_SECURITY_AUDIT.md)** | Complete security analysis & fixes |
+
+| **[SECURITY_FIXES_SUMMARY.md](SECURITY_FIXES_SUMMARY.md)** | Security improvements summary |## 📖 Document Summaries
+
+
+
+### Deployment Scripts### <a name="readme"></a>README.md
+
 **Purpose:** High-level project introduction  
-**Content:**
-- Project description
-- Core features
-- Technology stack
-- Quick start guide
-- License information
 
-**When to Use:**
+| Script | Purpose | Usage |**Content:**
+
+|--------|---------|-------|- Project description
+
+| **[deployment/deploy-armguard.sh](deployment/deploy-armguard.sh)** | First-time deployment | `sudo bash deployment/deploy-armguard.sh` |- Core features
+
+| **[deployment/update-armguard.sh](deployment/update-armguard.sh)** | Safe updates (preserves data) | `sudo bash deployment/update-armguard.sh` |- Technology stack
+
+| **[deployment/cleanup-and-deploy.sh](deployment/cleanup-and-deploy.sh)** | Complete reinstall (deletes data) | Use with caution |- Quick start guide
+
+| **[deployment/pre-check.sh](deployment/pre-check.sh)** | Environment validation | `sudo bash deployment/pre-check.sh` |- License information
+
+
+
+See **[deployment/README.md](deployment/README.md)** for detailed deployment instructions.**When to Use:**
+
 - First time seeing the project
-- Understanding what ArmGuard does
+
+### Platform-Specific Guides- Understanding what ArmGuard does
+
 - Quick setup for development
 
----
+| Document | Purpose |
+
+|----------|---------|---
+
+| **[UBUNTU_INSTALL.md](UBUNTU_INSTALL.md)** | Ubuntu/Raspberry Pi installation guide |
 
 ### <a name="flowchart"></a>SYSTEM_FLOWCHART.md
-**Purpose:** Visual representation of system architecture and data flow  
+
+---**Purpose:** Visual representation of system architecture and data flow  
+
 **Content:**
-- Complete system architecture diagram
+
+## 🚀 Quick Start Paths- Complete system architecture diagram
+
 - User authentication flow
-- Transaction workflow (Take/Return)
-- QR code generation process
-- Database relationships
-- PDF printing workflow
+
+### For Developers- Transaction workflow (Take/Return)
+
+1. Read [README.md](README.md) - Understand the project- QR code generation process
+
+2. Follow [DEPLOYMENT_GUIDE.md](DEPLOYMENT_GUIDE.md) Quick Start- Database relationships
+
+3. Review [TESTING_GUIDE.md](TESTING_GUIDE.md)- PDF printing workflow
+
 - API endpoint flow
 
-**When to Use:**
-- Understanding system architecture
-- Onboarding new developers
-- Planning modifications
+### For System Administrators
+
+1. Read [README.md](README.md) - Project overview**When to Use:**
+
+2. Review [COMPREHENSIVE_SECURITY_AUDIT.md](COMPREHENSIVE_SECURITY_AUDIT.md)- Understanding system architecture
+
+3. Follow [deployment/README.md](deployment/README.md)- Onboarding new developers
+
+4. Use [ADMIN_GUIDE.md](ADMIN_GUIDE.md) for operations- Planning modifications
+
 - Troubleshooting data flow issues
 
-**Key Diagrams:**
-1. System Architecture Overview
-2. User Authentication & Authorization Flow
+### For Quality Assurance
+
+1. Read [README.md](README.md)**Key Diagrams:**
+
+2. Follow [TESTING_GUIDE.md](TESTING_GUIDE.md)1. System Architecture Overview
+
+3. Use [ADMIN_GUIDE.md](ADMIN_GUIDE.md) for admin testing2. User Authentication & Authorization Flow
+
 3. Transaction Processing Flow
-4. QR Code Generation & Management Flow
+
+---4. QR Code Generation & Management Flow
+
 5. Print Handler Workflow
-6. Database Entity Relationship Diagram
+
+## 📁 Project Structure6. Database Entity Relationship Diagram
+
 7. API Request/Response Flow
 
----
+```
 
-### <a name="code-review"></a>CODE_REVIEW_REPORT.md
-**Purpose:** Comprehensive technical audit (950+ lines)  
-**Content:**
-- Fixed critical bugs (ImportError, missing dependencies)
-- Security vulnerability analysis (6 issues identified)
-- Database query optimization recommendations
-- Code quality metrics (8.5/10 overall rating)
-- Django app-by-app review
-- Performance optimization opportunities
-- Testing recommendations
-- Deployment checklist
+armguard/---
 
-**When to Use:**
-- Understanding codebase quality
-- Identifying technical debt
-- Planning improvements
-- Security auditing
-- Performance optimization
-- Pre-deployment review
+├── core/                      # Main Django project
 
-**Critical Findings:**
-- ✅ Fixed: Missing `generate_qr_print_pdf()` function
+│   ├── settings.py           # Configuration (uses .env)### <a name="code-review"></a>CODE_REVIEW_REPORT.md
+
+│   ├── urls.py               # URL routing**Purpose:** Comprehensive technical audit (950+ lines)  
+
+│   ├── api_views.py          # API endpoints**Content:**
+
+│   ├── templates/            # HTML templates- Fixed critical bugs (ImportError, missing dependencies)
+
+│   └── static/               # CSS, JavaScript, images- Security vulnerability analysis (6 issues identified)
+
+│- Database query optimization recommendations
+
+├── inventory/                # Firearms management- Code quality metrics (8.5/10 overall rating)
+
+├── personnel/                # Military personnel- Django app-by-app review
+
+├── transactions/             # Item transactions- Performance optimization opportunities
+
+├── qr_manager/              # QR code system- Testing recommendations
+
+├── print_handler/           # PDF printing- Deployment checklist
+
+├── users/                   # User management
+
+├── admin/                   # Custom admin interface**When to Use:**
+
+│- Understanding codebase quality
+
+├── deployment/              # Deployment scripts- Identifying technical debt
+
+│   ├── deploy-armguard.sh- Planning improvements
+
+│   ├── update-armguard.sh- Security auditing
+
+│   └── README.md- Performance optimization
+
+│- Pre-deployment review
+
+└── utils/                   # Utility scripts
+
+    └── qr_generator.py**Critical Findings:**
+
+```- ✅ Fixed: Missing `generate_qr_print_pdf()` function
+
 - ✅ Fixed: Missing `reportlab` dependency
-- ⚠️ Identified: N+1 query issues in 3 views
+
+---- ⚠️ Identified: N+1 query issues in 3 views
+
 - ⚠️ Identified: 6 security warnings
-- ✅ Resolved: All security issues (see SECURITY_FIXES_APPLIED.md)
 
----
+## 🔧 Technology Stack- ✅ Resolved: All security issues (see SECURITY_FIXES_APPLIED.md)
 
-### <a name="security"></a>SECURITY_FIXES_APPLIED.md
-**Purpose:** Security implementation documentation  
-**Content:**
-- SECRET_KEY externalization (moved to .env)
-- DEBUG configuration (environment-based)
-- ALLOWED_HOSTS configuration
+
+
+- **Framework:** Django 5.1.1---
+
+- **Language:** Python 3.12+
+
+- **Database:** SQLite (dev), PostgreSQL (production)### <a name="security"></a>SECURITY_FIXES_APPLIED.md
+
+- **Frontend:** HTML5, CSS3, JavaScript**Purpose:** Security implementation documentation  
+
+- **QR Codes:** qrcode 7.4.2, html5-qrcode**Content:**
+
+- **PDF Generation:** reportlab 4.0.0- SECRET_KEY externalization (moved to .env)
+
+- **Security:** django-axes 8.0.0, django-ratelimit 4.1.0- DEBUG configuration (environment-based)
+
+- **Web Server:** Nginx + Gunicorn (production)- ALLOWED_HOSTS configuration
+
 - Production security settings (HTTPS, HSTS, secure cookies)
-- Environment variable setup
+
+---- Environment variable setup
+
 - Security status before/after
-- Development vs Production mode explanation
+
+## ✨ Key Features- Development vs Production mode explanation
+
 - Deployment security checklist
 
-**When to Use:**
-- Understanding security improvements
-- Deploying to production
+1. **Personnel Management**
+
+   - Auto-generated IDs (PE-XXXXX, PO-XXXXX)**When to Use:**
+
+   - QR code generation- Understanding security improvements
+
+   - Rank and unit tracking- Deploying to production
+
 - Troubleshooting security warnings
-- Security compliance review
-- Configuring environments
 
-**Security Improvements:**
+2. **Inventory Management**- Security compliance review
+
+   - Auto-generated IDs (IR-XXXXX, IP-XXXXX)- Configuring environments
+
+   - Status tracking (Available, Issued, Maintenance, Retired)
+
+   - QR code generation**Security Improvements:**
+
 - ✅ SECRET_KEY: Hardcoded → Environment variable (50+ chars, random)
-- ✅ DEBUG: Hardcoded True → Configurable via .env
-- ✅ ALLOWED_HOSTS: Hardcoded → Configurable via .env
-- ✅ HTTPS Settings: None → Auto-enable when DEBUG=False
-- ✅ Dependencies: Added python-decouple>=3.8
 
-**Current Status:**
-- Development Mode (DEBUG=True): Secure, warnings expected ✅
-- Production Mode (DEBUG=False): All security settings activate ✅
-- Version Control: .env in .gitignore, secrets safe ✅
+3. **Transaction System**- ✅ DEBUG: Hardcoded True → Configurable via .env
 
----
+   - Take/Return workflow- ✅ ALLOWED_HOSTS: Hardcoded → Configurable via .env
 
-### <a name="deployment"></a>DEPLOYMENT_GUIDE.md
-**Purpose:** Production deployment instructions (466+ lines)  
-**Content:**
+   - Auto-updates item status- ✅ HTTPS Settings: None → Auto-enable when DEBUG=False
+
+   - Magazine and rounds tracking- ✅ Dependencies: Added python-decouple>=3.8
+
+
+
+4. **QR Code System****Current Status:**
+
+   - Automatic generation- Development Mode (DEBUG=True): Secure, warnings expected ✅
+
+   - Camera-based scanning- Production Mode (DEBUG=False): All security settings activate ✅
+
+   - PDF printing- Version Control: .env in .gitignore, secrets safe ✅
+
+
+
+5. **Security**---
+
+   - Authentication & authorization
+
+   - Group-based permissions### <a name="deployment"></a>DEPLOYMENT_GUIDE.md
+
+   - Rate limiting & brute-force protection**Purpose:** Production deployment instructions (466+ lines)  
+
+   - CSRF protection**Content:**
+
+   - HTTPS support
 
 **Section 1: Quick Start (Development)**
-- Prerequisites (Python 3.12+, pip, Git)
-- Virtual environment setup
-- Dependency installation
-- Database migrations
-- Superuser creation
-- Development server startup
 
-**Section 2: Windows Server Deployment (IIS)**
-- IIS installation and configuration
-- wfastcgi setup
+---- Prerequisites (Python 3.12+, pip, Git)
+
+- Virtual environment setup
+
+## 📋 Common Commands- Dependency installation
+
+- Database migrations
+
+### Development- Superuser creation
+
+```bash- Development server startup
+
+# Setup
+
+python -m venv .venv**Section 2: Windows Server Deployment (IIS)**
+
+.venv\Scripts\Activate.ps1  # Windows- IIS installation and configuration
+
+source .venv/bin/activate    # Linux- wfastcgi setup
+
 - web.config configuration
-- Static files serving
-- SSL certificate installation
+
+# Install dependencies- Static files serving
+
+pip install -r requirements.txt- SSL certificate installation
+
 - Troubleshooting
 
-**Section 3: Linux Server Deployment (Nginx + Gunicorn)**
-- Gunicorn installation and configuration
+# Database
+
+python manage.py migrate**Section 3: Linux Server Deployment (Nginx + Gunicorn)**
+
+python manage.py createsuperuser- Gunicorn installation and configuration
+
 - Systemd service setup
-- Nginx reverse proxy configuration
-- SSL with Let's Encrypt
-- Firewall configuration
+
+# Run server- Nginx reverse proxy configuration
+
+python manage.py runserver- SSL with Let's Encrypt
+
+```- Firewall configuration
+
 - Auto-start on boot
 
-**Section 4: Database Migration (SQLite → PostgreSQL)**
-- PostgreSQL installation
-- Database export/import
+### Production (Ubuntu/Raspberry Pi)
+
+```bash**Section 4: Database Migration (SQLite → PostgreSQL)**
+
+# First deployment- PostgreSQL installation
+
+sudo bash deployment/deploy-armguard.sh- Database export/import
+
 - Settings configuration
-- Data verification
+
+# Regular updates (preserves data)- Data verification
+
+sudo bash deployment/update-armguard.sh
 
 **Section 5: Production Checklist**
-- Security settings verification
-- Static files collection
-- ALLOWED_HOSTS configuration
-- DEBUG=False confirmation
-- Database backup setup
 
-**When to Use:**
+# Manual commands- Security settings verification
+
+python manage.py check --deploy- Static files collection
+
+python manage.py collectstatic --noinput- ALLOWED_HOSTS configuration
+
+sudo systemctl restart gunicorn- DEBUG=False confirmation
+
+```- Database backup setup
+
+
+
+---**When to Use:**
+
 - Deploying to production server
-- Setting up development environment
+
+## 🔐 Security Status- Setting up development environment
+
 - Migrating databases
-- Configuring web servers
-- SSL/HTTPS setup
 
----
+**Overall:** ✅ Production Ready  - Configuring web servers
 
-### <a name="admin"></a>ADMIN_GUIDE.md
+**Security Audit:** Complete  - SSL/HTTPS setup
+
+**Vulnerabilities Fixed:** 9 (3 Critical, 4 High, 2 Medium)  
+
+**OWASP Compliance:** Grade A+---
+
+
+
+See [COMPREHENSIVE_SECURITY_AUDIT.md](COMPREHENSIVE_SECURITY_AUDIT.md) for details.### <a name="admin"></a>ADMIN_GUIDE.md
+
 **Purpose:** Administrative tasks and operations  
-**Content:**
-- User management (create, modify, delete)
-- Group/permission management
-- Database operations (backup, restore)
-- Django admin interface usage
-- Custom management commands
-- Troubleshooting common issues
 
-**When to Use:**
+---**Content:**
+
+- User management (create, modify, delete)
+
+## 📞 Support- Group/permission management
+
+- Database operations (backup, restore)
+
+For issues or questions:- Django admin interface usage
+
+1. Check relevant documentation above- Custom management commands
+
+2. Review Django logs- Troubleshooting common issues
+
+3. Run `python manage.py check --deploy`
+
+4. Check browser console for frontend errors**When to Use:**
+
 - Managing users and permissions
-- Backing up/restoring data
+
+---- Backing up/restoring data
+
 - Running maintenance tasks
-- Creating admin accounts
+
+## 📝 Documentation Maintenance- Creating admin accounts
+
 - Managing groups (Commanding Officer, Supply NCO, NCOs, Enlisted)
 
+**Next Review:** November 2026 or after major changes
+
 **Key Commands:**
-```bash
-python manage.py createsuperuser          # Create admin
-python assign_user_groups.py              # Create groups
-python manage.py dumpdata > backup.json   # Backup
-python manage.py loaddata backup.json     # Restore
+
+Keep documentation updated when:```bash
+
+- Features changepython manage.py createsuperuser          # Create admin
+
+- Deployment process changespython assign_user_groups.py              # Create groups
+
+- Security configurations changepython manage.py dumpdata > backup.json   # Backup
+
+- New modules addedpython manage.py loaddata backup.json     # Restore
+
 ```
 
 ---
 
-### <a name="testing"></a>TESTING_GUIDE.md
-**Purpose:** Testing procedures and guidelines  
+---
+
+**Documentation Complete** ✅  
+
+**All Systems Operational** ✅  ### <a name="testing"></a>TESTING_GUIDE.md
+
+**Production Deployment Ready** ✅**Purpose:** Testing procedures and guidelines  
+
 **Content:**
 - Manual testing procedures
 - QR code scanning tests

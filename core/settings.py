@@ -27,7 +27,7 @@ SECRET_KEY = config('DJANGO_SECRET_KEY')  # No default - must be set in .env
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = config('DJANGO_DEBUG', default=False, cast=bool)
 
-ALLOWED_HOSTS = config('DJANGO_ALLOWED_HOSTS', default='127.0.0.1,localhost,192.168.68.129,192.168.56.1,192.168.42.1,192.168.59.1,armguard.rds', cast=Csv())
+ALLOWED_HOSTS = config('DJANGO_ALLOWED_HOSTS', default='127.0.0.1,localhost,192.168.68.129,192.168.56.1,192.168.42.1,192.168.59.1,armguard.rds,testserver', cast=Csv())
 
 
 # Application definition

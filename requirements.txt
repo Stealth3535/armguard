@@ -1,21 +1,21 @@
 # Django and core dependencies
-Django>=5.1.1
-python-decouple>=3.8
+Django==5.1.1
+python-decouple==3.8
 
-# WSGI HTTP server (each app gets its own version in venv)
-gunicorn>=21.2.0
+# WSGI HTTP server for production
+gunicorn==21.2.0
 
 # Image processing and QR code generation
-Pillow>=10.0.0
-qrcode>=7.4.2
+Pillow==10.4.0
+qrcode==7.4.2
 
 # PDF generation
-reportlab>=4.0.0
+reportlab==4.2.5
 
 # Security packages (production-ready)
-django-ratelimit>=4.1.0      # Rate limiting for views
-django-axes>=6.1.1           # Failed login attempt tracking and blocking
-psycopg2-binary>=2.9.9       # PostgreSQL adapter (for production database)
+django-ratelimit==4.1.0      # Rate limiting for views
+django-axes==8.0.0           # Failed login attempt tracking and blocking
+psycopg2-binary==2.9.10      # PostgreSQL adapter (for production database)
 
 # Note: The following are installed system-wide on the server (not via pip):
 # - Nginx (via apt install nginx) - reverse proxy for all apps
