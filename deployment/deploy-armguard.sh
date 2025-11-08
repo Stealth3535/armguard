@@ -335,6 +335,14 @@ setup_database() {
     
     cd "$PROJECT_DIR"
     
+    # Create log directories FIRST (before running any Django commands)
+    echo -e "${YELLOW}Creating log directories...${NC}"
+    mkdir -p "${PROJECT_DIR}/logs"
+    mkdir -p "/var/log/armguard"
+    chown -R ${RUN_USER}:${RUN_GROUP} "${PROJECT_DIR}/logs"
+    chown -R ${RUN_USER}:${RUN_GROUP} "/var/log/armguard"
+    echo -e "${GREEN}✓ Log directories created${NC}"
+    
     if [[ "$USE_POSTGRESQL" =~ ^[Yy] ]]; then
         echo -e "${YELLOW}Creating PostgreSQL database...${NC}"
         sudo -u postgres psql <<EOF
@@ -363,18 +371,7 @@ EOF
     echo -e "${GREEN}✓ Database ready${NC}"
 }
 
-# Step 6: Create log directories
-create_log_directories() {
-    echo ""
-    echo -e "${YELLOW}Creating log directories...${NC}"
-    mkdir -p "${PROJECT_DIR}/logs"
-    mkdir -p "/var/log/armguard"
-    chown -R ${RUN_USER}:${RUN_GROUP} "${PROJECT_DIR}/logs"
-    chown -R ${RUN_USER}:${RUN_GROUP} "/var/log/armguard"
-    echo -e "${GREEN}✓ Log directories created${NC}"
-}
-
-# Step 7: Install Gunicorn service
+# Step 6: Install Gunicorn service
 install_gunicorn_service() {
     echo ""
     echo -e "${BLUE}═══════════════════════════════════════════════════════${NC}"
@@ -772,7 +769,6 @@ main() {
     setup_python_environment
     configure_environment
     setup_database
-    create_log_directories
     install_gunicorn_service
     configure_nginx
     setup_ssl
