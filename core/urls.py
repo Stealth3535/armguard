@@ -6,12 +6,16 @@ from django.urls import path, include
 from django.conf import settings
 from django.conf.urls.static import static
 from django.contrib.auth import views as auth_views
+from decouple import config
 from . import views
 from . import api_views
 
+# Admin URL obfuscation - use environment variable
+ADMIN_URL = config('DJANGO_ADMIN_URL', default='superadmin')
+
 urlpatterns = [
-    # Django Admin (Superuser only)
-    path('superadmin/', admin.site.urls),
+    # Django Admin (Superuser only) - Obfuscated URL
+    path(f'{ADMIN_URL}/', admin.site.urls),
     
     # Custom Admin (Staff users)
     path('admin/', include('admin.urls', namespace='custom_admin')),

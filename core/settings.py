@@ -38,6 +38,8 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    # Security Apps
+    'axes',  # Failed login attempt tracking
     # ArmGuard Apps
     'core',  # Added to register template tags
     'admin.apps.CustomAdminConfig',
@@ -57,6 +59,11 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    # Security Middleware
+    'axes.middleware.AxesMiddleware',  # Failed login tracking
+    'core.middleware.RateLimitMiddleware',  # Rate limiting
+    'core.middleware.SecurityHeadersMiddleware',  # Additional security headers
+    'core.middleware.StripSensitiveHeadersMiddleware',  # Remove sensitive headers
 ]
 
 ROOT_URLCONF = 'core.urls'
@@ -99,6 +106,9 @@ AUTH_PASSWORD_VALIDATORS = [
     },
     {
         'NAME': 'django.contrib.auth.password_validation.MinimumLengthValidator',
+        'OPTIONS': {
+            'min_length': config('PASSWORD_MIN_LENGTH', default=8, cast=int),
+        }
     },
     {
         'NAME': 'django.contrib.auth.password_validation.CommonPasswordValidator',
@@ -106,6 +116,12 @@ AUTH_PASSWORD_VALIDATORS = [
     {
         'NAME': 'django.contrib.auth.password_validation.NumericPasswordValidator',
     },
+]
+
+# Authentication Backends (for Django Axes)
+AUTHENTICATION_BACKENDS = [
+    'axes.backends.AxesStandaloneBackend',  # Axes authentication backend
+    'django.contrib.auth.backends.ModelBackend',  # Default backend
 ]
 
 
@@ -159,3 +175,37 @@ if not DEBUG:
     SECURE_HSTS_SECONDS = config('SECURE_HSTS_SECONDS', default=31536000, cast=int)  # 1 year
     SECURE_HSTS_INCLUDE_SUBDOMAINS = True
     SECURE_HSTS_PRELOAD = True
+
+# File Upload Security
+FILE_UPLOAD_MAX_MEMORY_SIZE = config('FILE_UPLOAD_MAX_MEMORY_SIZE', default=5242880, cast=int)  # 5MB
+DATA_UPLOAD_MAX_MEMORY_SIZE = config('DATA_UPLOAD_MAX_MEMORY_SIZE', default=5242880, cast=int)  # 5MB
+
+# Session Security
+SESSION_COOKIE_HTTPONLY = True
+SESSION_COOKIE_SAMESITE = 'Lax'  # or 'Strict' for higher security
+CSRF_COOKIE_HTTPONLY = True
+CSRF_COOKIE_SAMESITE = 'Lax'
+
+# Rate Limiting Configuration
+RATELIMIT_ENABLE = config('RATELIMIT_ENABLE', default=True, cast=bool)
+RATELIMIT_REQUESTS_PER_MINUTE = config('RATELIMIT_REQUESTS_PER_MINUTE', default=60, cast=int)
+
+# Django Axes Configuration (Failed Login Protection)
+AXES_ENABLED = config('AXES_ENABLED', default=True, cast=bool)
+AXES_FAILURE_LIMIT = config('AXES_FAILURE_LIMIT', default=5, cast=int)
+AXES_COOLOFF_TIME = config('AXES_COOLOFF_TIME', default=1, cast=int)  # Hours
+AXES_LOCKOUT_PARAMETERS = [["username", "ip_address"]]  # Lock by username AND IP
+AXES_RESET_ON_SUCCESS = True
+AXES_ONLY_ADMIN_SITE = False  # Protect all login views
+AXES_ENABLE_ACCESS_FAILURE_LOG = True
+
+# Cache Configuration (for rate limiting and Axes)
+CACHES = {
+    'default': {
+        'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
+        'LOCATION': 'armguard-cache',
+    }
+}
+
+# Admin URL Configuration
+ADMIN_URL_PREFIX = config('DJANGO_ADMIN_URL', default='superadmin')

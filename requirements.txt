@@ -12,6 +12,11 @@ qrcode>=7.4.2
 # PDF generation
 reportlab>=4.0.0
 
+# Security packages (production-ready)
+django-ratelimit>=4.1.0      # Rate limiting for views
+django-axes>=6.1.1           # Failed login attempt tracking and blocking
+psycopg2-binary>=2.9.9       # PostgreSQL adapter (for production database)
+
 # Note: The following are installed system-wide on the server (not via pip):
 # - Nginx (via apt install nginx) - reverse proxy for all apps
 # - mkcert (manual installation from GitHub releases) - SSL certificates for LAN
