@@ -105,6 +105,8 @@ sudo bash deployment/install-mkcert-ssl.sh armguard.local
 ### First Time Setup
 ```bash
 # On your Raspberry Pi 5 / Ubuntu Server
+# Create directory and clone repository
+sudo mkdir -p /var/www
 cd /var/www
 sudo git clone https://github.com/Stealth3535/armguard.git
 cd armguard

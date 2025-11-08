@@ -150,18 +150,24 @@ python manage.py runserver
 **Quick Install (One Command):**
 
 ```bash
-# Clone and deploy automatically
+# Create directory and clone repository
+sudo mkdir -p /var/www
 cd /var/www
 sudo git clone https://github.com/Stealth3535/armguard.git
 cd armguard
+
+# Deploy automatically
 sudo bash deployment/deploy-armguard.sh
 ```
 
 **Manual Installation:**
 
 ```bash
-# Clone repository
+# Install prerequisites
 sudo apt update && sudo apt install -y git python3 python3-venv python3-pip
+
+# Create directory and clone repository
+sudo mkdir -p /var/www
 cd /var/www
 sudo git clone https://github.com/Stealth3535/armguard.git
 cd armguard
