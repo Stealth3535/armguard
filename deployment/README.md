@@ -1,10 +1,97 @@
-# Gunicorn Service Management for ArmGuard
+# ArmGuard Deployment Scripts
 
-This directory contains systemd service files and deployment scripts for managing Gunicorn.
+This directory contains deployment and management scripts for ArmGuard on Ubuntu/Raspberry Pi.
 
 ---
 
-## Quick Setup
+## 📋 Available Scripts
+
+### 🚀 Initial Deployment
+**`deploy-armguard.sh`** - Complete automated first-time deployment
+```bash
+sudo bash deployment/deploy-armguard.sh
+```
+- Fresh installation
+- Creates database
+- Configures services
+- Sets up Nginx & SSL
+
+### ✅ Safe Update (Preserves Data)
+**`update-armguard.sh`** - Update code without losing data ⭐ **RECOMMENDED**
+```bash
+sudo bash deployment/update-armguard.sh
+```
+- ✅ **Automatically backs up database**
+- ✅ **Preserves all your data**
+- ✅ Updates code from GitHub
+- ✅ Installs new dependencies
+- ✅ Runs migrations safely
+- ✅ Restarts services
+- ✅ Verifies deployment
+
+**Use this for:**
+- Pulling security fixes
+- Getting new features
+- Bug fixes
+- Regular updates
+
+### ♻️ Complete Reinstall
+**`cleanup-and-deploy.sh`** - Remove everything and start fresh
+```bash
+sudo bash deployment/cleanup-and-deploy.sh
+```
+- ⚠️ **DELETES all data**
+- Removes database
+- Fresh installation
+- **Only use for testing or major issues!**
+
+### ✔️ Pre-Deployment Check
+**`pre-check.sh`** - Validate environment before deployment
+```bash
+sudo bash deployment/pre-check.sh
+```
+- Checks internet connectivity
+- Validates Python installation
+- Verifies disk space
+- Tests port availability
+
+### 🔧 Service Installer
+**`install-gunicorn-service.sh`** - Install/update service only
+```bash
+sudo bash deployment/install-gunicorn-service.sh
+```
+- Updates systemd service
+- Doesn't touch code or data
+
+---
+
+## 🎯 Quick Usage Guide
+
+### First Time Setup
+```bash
+# On your Raspberry Pi / Ubuntu Server
+git clone https://github.com/Stealth3535/armguard.git
+cd armguard
+sudo bash deployment/pre-check.sh          # Validate environment
+sudo bash deployment/deploy-armguard.sh    # Deploy
+```
+
+### Regular Updates (With Data)
+```bash
+cd /var/www/armguard
+sudo bash deployment/update-armguard.sh    # One command - done!
+```
+
+**That's it!** The update script handles everything automatically:
+- Backs up your database
+- Updates code
+- Installs dependencies
+- Runs migrations
+- Restarts services
+
+---
+
+## Quick Setup (Manual Method)
 
 ### 1. Install Gunicorn (if not already in venv)
 ```bash
