@@ -1,6 +1,15 @@
+# Django and core dependencies
 Django>=5.1.1
+python-decouple>=3.8
+
+# Image processing and QR code generation
 Pillow>=10.0.0
 qrcode>=7.4.2
+
+# PDF generation
 reportlab>=4.0.0
-python-decouple>=3.8
-mkcert>=1.4.0
+
+# Note: The following are installed system-wide on the server (not via pip):
+# - Gunicorn (via apt install gunicorn)
+# - Nginx (via apt install nginx)
+# - mkcert (manual installation from GitHub releases)
