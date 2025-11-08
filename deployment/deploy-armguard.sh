@@ -212,24 +212,33 @@ setup_project_directory() {
     echo -e "${BLUE}Step 2: Setting Up Project Directory${NC}"
     echo -e "${BLUE}═══════════════════════════════════════════════════════${NC}"
     
-    if [ -d "$PROJECT_DIR" ]; then
+    if [ -d "$PROJECT_DIR" ] && [ -f "$PROJECT_DIR/manage.py" ]; then
         echo -e "${YELLOW}Project directory exists: ${PROJECT_DIR}${NC}"
     else
-        echo -e "${YELLOW}Creating project directory: ${PROJECT_DIR}${NC}"
-        mkdir -p "$PROJECT_DIR"
-        
         # If running from within project, copy files
         SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
         if [ -f "$SCRIPT_DIR/../manage.py" ]; then
-            echo -e "${YELLOW}Copying project files...${NC}"
+            echo -e "${YELLOW}Copying project files to ${PROJECT_DIR}...${NC}"
+            mkdir -p "$(dirname "$PROJECT_DIR")"
             cp -r "$SCRIPT_DIR/.." "$PROJECT_DIR"
         else
+            echo -e "${YELLOW}Creating project directory: ${PROJECT_DIR}${NC}"
+            mkdir -p "$PROJECT_DIR"
             echo -e "${YELLOW}Please copy your project files to ${PROJECT_DIR}${NC}"
             read -p "Press ENTER when ready..."
         fi
     fi
     
     cd "$PROJECT_DIR"
+    
+    # Verify manage.py exists
+    if [ ! -f "manage.py" ]; then
+        echo -e "${RED}ERROR: manage.py not found in ${PROJECT_DIR}${NC}"
+        echo -e "${YELLOW}Current directory contents:${NC}"
+        ls -la
+        exit 1
+    fi
+    
     echo -e "${GREEN}✓ Project directory ready: ${PROJECT_DIR}${NC}"
 }
 
