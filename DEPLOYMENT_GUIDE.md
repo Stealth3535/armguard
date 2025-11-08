@@ -535,6 +535,7 @@ For issues or questions:
 - **LAN/Local SSL Setup**: [UBUNTU_MKCERT_SSL_SETUP.md](./UBUNTU_MKCERT_SSL_SETUP.md)
 - **Ubuntu Quick Install**: [UBUNTU_INSTALL.md](./UBUNTU_INSTALL.md)
 - **Security Hardening**: [SECURITY_FIXES_APPLIED.md](./SECURITY_FIXES_APPLIED.md)
+- **Online Testing Security**: [SECURITY_ONLINE_TESTING.md](./SECURITY_ONLINE_TESTING.md) - **Read this before exposing app to internet**
 
 ---
 
