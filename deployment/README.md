@@ -14,7 +14,8 @@ sudo bash deployment/deploy-armguard.sh
 - Fresh installation
 - Creates database
 - Configures services
-- Sets up Nginx & SSL
+- Sets up Python environment
+- Installs dependencies
 
 ### ✅ Safe Update (Preserves Data)
 **`update-armguard.sh`** - Update code without losing data ⭐ **RECOMMENDED**
@@ -56,12 +57,46 @@ sudo bash deployment/pre-check.sh
 - Tests port availability
 
 ### 🔧 Service Installer
-**`install-gunicorn-service.sh`** - Install/update service only
+**`install-gunicorn-service.sh`** - Install/update Gunicorn service only
 ```bash
 sudo bash deployment/install-gunicorn-service.sh
 ```
 - Updates systemd service
 - Doesn't touch code or data
+
+### 🌐 Web Server Setup
+**`install-nginx.sh`** - Install and configure Nginx
+```bash
+sudo bash deployment/install-nginx.sh [domain]
+```
+- Installs Nginx web server
+- Configures reverse proxy to Gunicorn
+- Sets up static/media file serving
+- Adds security headers
+- Configures firewall (UFW)
+
+**Example with custom domain:**
+```bash
+sudo bash deployment/install-nginx.sh armguard.local
+```
+
+### 🔐 SSL/HTTPS Setup
+**`install-mkcert-ssl.sh`** - Install SSL certificates (local development)
+```bash
+sudo bash deployment/install-mkcert-ssl.sh [domain]
+```
+- Installs mkcert (supports ARM64 for Raspberry Pi)
+- Generates self-signed SSL certificates
+- Configures Nginx for HTTPS
+- Enables HTTP → HTTPS redirect
+- Adds SSL security headers
+
+**Example with custom domain:**
+```bash
+sudo bash deployment/install-mkcert-ssl.sh armguard.local
+```
+
+**⚠️ Note:** For production servers accessible from the internet, use Let's Encrypt instead (see [NGINX_SSL_GUIDE.md](NGINX_SSL_GUIDE.md))
 
 ---
 
@@ -69,11 +104,22 @@ sudo bash deployment/install-gunicorn-service.sh
 
 ### First Time Setup
 ```bash
-# On your Raspberry Pi / Ubuntu Server
-git clone https://github.com/Stealth3535/armguard.git
+# On your Raspberry Pi 5 / Ubuntu Server
+cd /var/www
+sudo git clone https://github.com/Stealth3535/armguard.git
 cd armguard
-sudo bash deployment/pre-check.sh          # Validate environment
-sudo bash deployment/deploy-armguard.sh    # Deploy
+
+# Optional: Validate environment first
+sudo bash deployment/pre-check.sh
+
+# Deploy application
+sudo bash deployment/deploy-armguard.sh
+
+# Install web server (Nginx)
+sudo bash deployment/install-nginx.sh
+
+# Optional: Install SSL/HTTPS
+sudo bash deployment/install-mkcert-ssl.sh
 ```
 
 ### Regular Updates (With Data)
@@ -88,6 +134,44 @@ sudo bash deployment/update-armguard.sh    # One command - done!
 - Installs dependencies
 - Runs migrations
 - Restarts services
+
+---
+
+## 🌐 Web Server & SSL Setup
+
+### Nginx Installation
+After deploying ArmGuard, install Nginx to serve your application:
+
+```bash
+cd /var/www/armguard
+sudo bash deployment/install-nginx.sh
+```
+
+**Access your application:**
+- HTTP: `http://your-server-ip`
+- Or with custom domain: `http://armguard.local`
+
+### SSL/HTTPS Setup (Optional)
+
+**For local development/testing:**
+```bash
+sudo bash deployment/install-mkcert-ssl.sh
+```
+
+**For production (internet-accessible):**
+```bash
+# Install Certbot
+sudo apt install -y certbot python3-certbot-nginx
+
+# Generate Let's Encrypt certificate
+sudo certbot --nginx -d yourdomain.com
+```
+
+**Access with HTTPS:**
+- `https://your-server-ip`
+- Or: `https://yourdomain.com`
+
+**📖 Complete Nginx & SSL Guide:** [NGINX_SSL_GUIDE.md](NGINX_SSL_GUIDE.md)
 
 ---
 
@@ -509,4 +593,91 @@ sudo journalctl -u gunicorn-armguard -f
 
 ---
 
-**Created:** November 8, 2025
+## 📚 Documentation Index
+
+| Document | Description |
+|----------|-------------|
+| [README.md](README.md) | This file - deployment scripts guide |
+| [NGINX_SSL_GUIDE.md](NGINX_SSL_GUIDE.md) | Complete Nginx & SSL setup guide |
+| [QUICK_DEPLOY.md](QUICK_DEPLOY.md) | Quick deployment reference |
+| [../DEPLOYMENT_GUIDE.md](../DEPLOYMENT_GUIDE.md) | Complete deployment guide |
+| [../ADMIN_GUIDE.md](../ADMIN_GUIDE.md) | Administrator operations guide |
+| [../TESTING_GUIDE.md](../TESTING_GUIDE.md) | Testing procedures |
+| [../FINAL_TEST_REPORT.md](../FINAL_TEST_REPORT.md) | Comprehensive test results |
+| [../DEPLOYMENT_READY.md](../DEPLOYMENT_READY.md) | Final deployment summary |
+
+---
+
+## 🎯 Quick Command Reference
+
+```bash
+# Application Management
+sudo systemctl status gunicorn-armguard    # Check status
+sudo systemctl restart gunicorn-armguard   # Restart app
+sudo systemctl stop gunicorn-armguard      # Stop app
+sudo systemctl start gunicorn-armguard     # Start app
+
+# Web Server Management
+sudo systemctl status nginx                # Check Nginx
+sudo systemctl restart nginx               # Restart Nginx
+sudo nginx -t                              # Test config
+
+# Updates (Preserves Data)
+sudo bash deployment/update-armguard.sh    # Safe update
+
+# Logs
+sudo journalctl -u gunicorn-armguard -f   # App logs
+sudo tail -f /var/log/nginx/armguard_access.log  # Access logs
+sudo tail -f /var/log/nginx/armguard_error.log   # Error logs
+
+# Database Backup (Manual)
+sudo cp /var/www/armguard/db.sqlite3 \
+        /var/www/armguard/db.sqlite3.backup_$(date +%Y%m%d_%H%M%S)
+```
+
+---
+
+## ✅ Post-Installation Checklist
+
+After deployment, verify:
+
+- [ ] Application accessible via HTTP
+- [ ] Can login with superuser credentials
+- [ ] Dashboard loads correctly
+- [ ] Static files (CSS/JS) loading
+- [ ] Media files (images/QR codes) loading
+- [ ] Can create personnel records
+- [ ] Can create inventory items
+- [ ] QR codes generate automatically
+- [ ] Transactions can be created
+- [ ] Gunicorn service running
+- [ ] Nginx service running (if installed)
+- [ ] SSL certificate working (if installed)
+- [ ] Automatic backup working
+
+---
+
+## 🆘 Need Help?
+
+1. **Check logs first:**
+   ```bash
+   sudo journalctl -u gunicorn-armguard -n 50
+   sudo tail -f /var/log/nginx/armguard_error.log
+   ```
+
+2. **Review documentation:**
+   - Troubleshooting sections in guides
+   - Error messages in logs
+   - Django debug output (if DEBUG=True)
+
+3. **Common issues:**
+   - 502 Bad Gateway → Gunicorn not running
+   - Static files not loading → Run collectstatic
+   - Permission denied → Check file ownership
+   - Database locked → Check permissions on db.sqlite3
+
+---
+
+**Created:** November 8, 2025  
+**Last Updated:** November 8, 2025  
+**Version:** 2.0
