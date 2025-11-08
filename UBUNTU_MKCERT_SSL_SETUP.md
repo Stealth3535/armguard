@@ -27,14 +27,17 @@ This guide shows you how to set up **secure HTTPS** for your Django app on a **l
 
 ## Part 1: Server Setup (Ubuntu)
 
-### 1) Install Nginx and dependencies
+### 1) Install Nginx, Gunicorn, and dependencies (system-wide)
 
 ```bash
 # Update package list
 sudo apt update
 
-# Install Nginx, Python, and required tools
-sudo apt install -y nginx python3-pip python3-venv wget libnss3-tools
+# Install Nginx, Python, Gunicorn (system-wide), and required tools
+sudo apt install -y nginx python3-pip python3-venv wget libnss3-tools gunicorn
+
+# Alternative: Install Gunicorn via pip3 system-wide if apt version is outdated
+# sudo pip3 install gunicorn
 
 # Start and enable Nginx
 sudo systemctl start nginx
@@ -42,30 +45,24 @@ sudo systemctl enable nginx
 
 # Check status
 sudo systemctl status nginx
+
+# Verify Gunicorn is installed system-wide
+which gunicorn
+gunicorn --version
 ```
 
-### 2) Install Gunicorn in your virtual environment
+**Why system-wide installation?**
+- ✅ One Gunicorn installation serves all apps (less duplication)
+- ✅ Easier to manage multiple apps on one server
+- ✅ Works for both LAN and public-facing apps
+- ✅ Each app still uses its own virtual environment for dependencies
+
+### 2) Create Gunicorn systemd service (using system-wide Gunicorn)
+
+Create `/etc/systemd/system/gunicorn-armguard.service`:
 
 ```bash
-# Navigate to your project directory
-cd /path/to/your/project
-
-# Activate virtual environment
-source venv/bin/activate
-
-# Install Gunicorn
-pip install gunicorn
-
-# Test Gunicorn (optional - stop with Ctrl+C)
-gunicorn --bind 0.0.0.0:8000 core.wsgi:application
-```
-
-### 3) Create Gunicorn systemd service
-
-Create `/etc/systemd/system/gunicorn.service`:
-
-```bash
-sudo nano /etc/systemd/system/gunicorn.service
+sudo nano /etc/systemd/system/gunicorn-armguard.service
 ```
 
 Add the following content (adjust paths to match your setup):
@@ -79,43 +76,48 @@ After=network.target
 User=www-data
 Group=www-data
 WorkingDirectory=/home/your-username/armguard
-Environment="PATH=/home/your-username/armguard/venv/bin"
-ExecStart=/home/your-username/armguard/venv/bin/gunicorn \
+Environment="PATH=/home/your-username/armguard/venv/bin:/usr/bin"
+ExecStart=/usr/bin/gunicorn \
+          --pythonpath /home/your-username/armguard \
           --workers 3 \
-          --bind unix:/run/gunicorn.sock \
+          --bind unix:/run/gunicorn-armguard.sock \
           core.wsgi:application
+Restart=always
+RestartSec=3
 
 [Install]
 WantedBy=multi-user.target
 ```
 
+**Key changes for system-wide Gunicorn**:
+- Uses `/usr/bin/gunicorn` (system-wide, not venv)
+- `--pythonpath` points to your project directory
+- Environment PATH includes both venv/bin (for app dependencies) and /usr/bin (for Gunicorn)
+- Each app gets its own service name (e.g., `gunicorn-armguard.service`, `gunicorn-app2.service`)
+
 **Important**: Replace `/home/your-username/armguard` with your actual project path.
 
-Create the socket directory and set permissions:
+Set permissions and start the service:
 
 ```bash
-# Create socket directory
-sudo mkdir -p /run/gunicorn
-
-# Set ownership
-sudo chown www-data:www-data /run/gunicorn
-
 # Give project directory access to www-data
-sudo chown -R www-data:www-data /path/to/your/project
+sudo chown -R www-data:www-data /home/your-username/armguard
 
 # Start and enable Gunicorn
 sudo systemctl daemon-reload
-sudo systemctl start gunicorn
-sudo systemctl enable gunicorn
+sudo systemctl start gunicorn-armguard
+sudo systemctl enable gunicorn-armguard
 
 # Check status
-sudo systemctl status gunicorn
+sudo systemctl status gunicorn-armguard
 
 # Verify socket created
-ls -l /run/gunicorn.sock
+ls -l /run/gunicorn-armguard.sock
 ```
 
-### 4) Install mkcert
+**Note**: Socket files are automatically created in `/run/` by Gunicorn when the service starts.
+
+### 3) Install mkcert (system-wide)
 
 ```bash
 # Download and install mkcert (latest version - check GitHub for updates)
@@ -127,7 +129,9 @@ sudo chmod +x /usr/local/bin/mkcert
 mkcert -version
 ```
 
-### 5) Create a local Certificate Authority (CA)
+**System-wide installation** allows you to generate certificates for multiple apps from anywhere on the system.
+
+### 4) Create a local Certificate Authority (CA)
 
 ```bash
 # Generate the local CA (creates rootCA.pem and rootCA-key.pem in ~/.local/share/mkcert)
@@ -139,7 +143,7 @@ mkcert -CAROOT
 
 **Important**: The CA certificate file is located at `~/.local/share/mkcert/rootCA.pem`. You will copy this file to client devices later.
 
-### 6) Generate SSL certificate for your LAN IP or hostname
+### 5) Generate SSL certificate for your LAN IP or hostname
 
 Choose **one** of the following based on how you'll access the app:
 
@@ -164,7 +168,7 @@ This creates two files in the current directory:
 - `192.168.1.100+2.pem` (or similar name) - the certificate
 - `192.168.1.100+2-key.pem` - the private key
 
-### 7) Move certificates to a secure location
+### 6) Move certificates to a secure location
 
 ```bash
 # Create SSL directory
@@ -183,7 +187,7 @@ sudo chown root:root /etc/ssl/armguard/*
 ls -lh /etc/ssl/armguard/
 ```
 
-### 8) Configure Nginx for HTTPS
+### 7) Configure Nginx for HTTPS
 
 Edit your Nginx server block (e.g., `/etc/nginx/sites-available/armguard`):
 
@@ -260,7 +264,7 @@ sudo nginx -t
 sudo systemctl reload nginx
 ```
 
-### 9) Configure firewall (ufw)
+### 8) Configure firewall (ufw)
 
 ```bash
 # Allow HTTP and HTTPS
@@ -275,7 +279,7 @@ sudo ufw enable
 sudo ufw status
 ```
 
-### 10) Update Django settings
+### 9) Update Django settings
 
 In `core/settings.py`, ensure these are set:
 
@@ -301,18 +305,18 @@ source /path/to/your/project/venv/bin/activate
 python manage.py collectstatic --noinput
 
 # Restart Gunicorn
-sudo systemctl restart gunicorn
+sudo systemctl restart gunicorn-armguard
 
 # Check logs if issues occur
-sudo journalctl -u gunicorn -f
+sudo journalctl -u gunicorn-armguard -f
 ```
 
-### 11) Verify the deployment
+### 10) Verify the deployment
 
 ```bash
 # Check all services are running
 sudo systemctl status nginx
-sudo systemctl status gunicorn
+sudo systemctl status gunicorn-armguard
 
 # Test HTTPS locally from the server
 curl -I https://192.168.1.100
@@ -321,6 +325,147 @@ curl -I https://192.168.1.100
 sudo tail -f /var/log/nginx/error.log
 sudo tail -f /var/log/nginx/access.log
 ```
+
+---
+
+## Adding a Second App (LAN + Online on Same Server)
+
+Since Nginx, Gunicorn, and mkcert are installed **system-wide**, adding a second app is straightforward.
+
+### Example: Adding a second Django app for online access
+
+**1) Deploy your second app** (e.g., `/home/your-username/online-app`):
+```bash
+cd /home/your-username
+git clone https://github.com/yourname/online-app.git
+cd online-app
+
+# Create virtual environment and install dependencies
+python3 -m venv venv
+source venv/bin/activate
+pip install -r requirements.txt
+pip install python-decouple
+
+# Set up .env file
+cp .env.example .env
+nano .env  # Configure settings
+
+# Collect static files
+python manage.py collectstatic --noinput
+```
+
+**2) Create a separate Gunicorn service** (`/etc/systemd/system/gunicorn-online.service`):
+```ini
+[Unit]
+Description=gunicorn daemon for online-app
+After=network.target
+
+[Service]
+User=www-data
+Group=www-data
+WorkingDirectory=/home/your-username/online-app
+Environment="PATH=/home/your-username/online-app/venv/bin:/usr/bin"
+ExecStart=/usr/bin/gunicorn \
+          --pythonpath /home/your-username/online-app \
+          --workers 3 \
+          --bind unix:/run/gunicorn-online.sock \
+          core.wsgi:application
+Restart=always
+RestartSec=3
+
+[Install]
+WantedBy=multi-user.target
+```
+
+**3) For online access** (public domain with Let's Encrypt):
+
+Create Nginx config (`/etc/nginx/sites-available/yourdomain.com`):
+```nginx
+server {
+    listen 80;
+    server_name yourdomain.com www.yourdomain.com;
+    return 301 https://$server_name$request_uri;
+}
+
+server {
+    listen 443 ssl http2;
+    server_name yourdomain.com www.yourdomain.com;
+
+    # Let's Encrypt certificates (use certbot to obtain)
+    ssl_certificate /etc/letsencrypt/live/yourdomain.com/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/yourdomain.com/privkey.pem;
+    include /etc/letsencrypt/options-ssl-nginx.conf;
+    ssl_dhparam /etc/letsencrypt/ssl-dhparams.pem;
+
+    # Security headers
+    add_header Strict-Transport-Security "max-age=31536000; includeSubDomains" always;
+    add_header X-Frame-Options DENY;
+    add_header X-Content-Type-Options nosniff;
+
+    location / {
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_pass http://unix:/run/gunicorn-online.sock;
+    }
+
+    location /static/ {
+        alias /home/your-username/online-app/staticfiles/;
+        expires 30d;
+    }
+}
+```
+
+**4) Obtain Let's Encrypt certificate** (for online app):
+```bash
+sudo apt install python3-certbot-nginx
+sudo certbot --nginx -d yourdomain.com -d www.yourdomain.com
+```
+
+**5) Start both services**:
+```bash
+# Set permissions
+sudo chown -R www-data:www-data /home/your-username/online-app
+
+# Enable and start
+sudo systemctl daemon-reload
+sudo systemctl start gunicorn-online
+sudo systemctl enable gunicorn-online
+
+# Enable Nginx config
+sudo ln -sf /etc/nginx/sites-available/yourdomain.com /etc/nginx/sites-enabled/
+sudo nginx -t
+sudo systemctl reload nginx
+```
+
+### Summary: Two Apps on One Server
+
+```
+┌─────────────────────────────────────────┐
+│  Server (192.168.1.100)                 │
+│                                         │
+│  Nginx (port 80/443)                    │
+│  ├─ armguard.local (mkcert)             │
+│  │  → /run/gunicorn-armguard.sock      │
+│  │                                      │
+│  └─ yourdomain.com (Let's Encrypt)      │
+│     → /run/gunicorn-online.sock        │
+│                                         │
+│  System-wide:                           │
+│  - /usr/bin/gunicorn                    │
+│  - /usr/local/bin/mkcert                │
+│  - nginx                                │
+└─────────────────────────────────────────┘
+```
+
+**Key points**:
+- ✅ One Nginx installation handles both apps
+- ✅ One Gunicorn binary (system-wide) runs multiple services
+- ✅ LAN app uses mkcert certificates
+- ✅ Online app uses Let's Encrypt certificates
+- ✅ Each app has its own systemd service and socket
+- ✅ Easy to add more apps (just repeat the pattern)
 
 ---
 
@@ -1098,22 +1243,29 @@ On a dedicated Ubuntu Server (2GB+ RAM):
 ## Quick Reference: Service Management
 
 ```bash
-# Restart all services after changes
-sudo systemctl restart gunicorn
-sudo systemctl restart nginx
+# Restart services after changes
+sudo systemctl restart gunicorn-armguard  # Restart specific app
+sudo systemctl restart gunicorn-online    # If you have a second app
+sudo systemctl restart nginx              # Restart Nginx
 
 # View logs
-sudo journalctl -u gunicorn -f    # Follow Gunicorn logs
-sudo journalctl -u nginx -f       # Follow Nginx logs
-sudo tail -f /var/log/nginx/error.log
+sudo journalctl -u gunicorn-armguard -f   # Follow Gunicorn logs for armguard
+sudo journalctl -u gunicorn-online -f     # Follow logs for second app
+sudo journalctl -u nginx -f               # Follow Nginx logs
+sudo tail -f /var/log/nginx/error.log     # Nginx error log
 
 # Check status
-sudo systemctl status gunicorn
+sudo systemctl status gunicorn-armguard
+sudo systemctl status gunicorn-online
 sudo systemctl status nginx
 
 # Enable services on boot (already done in setup)
-sudo systemctl enable gunicorn
+sudo systemctl enable gunicorn-armguard
+sudo systemctl enable gunicorn-online
 sudo systemctl enable nginx
+
+# List all Gunicorn services
+systemctl list-units | grep gunicorn
 ```
 
 ---
