@@ -53,9 +53,9 @@ class QRCodeImage(models.Model):
     def __str__(self):
         return f"{self.qr_type} QR: {self.reference_id}"
     
-    def generate_qr_code(self, size=300, box_size=10, border=1):
-        """Generate QR code image using unified qr_generator - Standard format"""
-        # Use unified QR generator for consistency across all systems
+    def generate_qr_code(self, size=600, box_size=20, border=2):
+        """Generate HIGH-RESOLUTION QR code image for crisp printing"""
+        # Use unified QR generator with HD settings for print quality
         buffer = generate_qr_code_to_buffer(self.qr_data, size=size)
         
         # Save to model - filename is just the reference_id (e.g., IP-854643041125.png)

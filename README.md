@@ -169,6 +169,8 @@ sudo apt update && sudo apt install -y git python3 python3-venv python3-pip
 # Create directory and clone repository
 sudo mkdir -p /var/www
 cd /var/www
+#if already shelled
+git clone git@github.com:Stealth3535/armguard.git
 sudo git clone https://github.com/Stealth3535/armguard.git
 cd armguard
 

@@ -60,25 +60,21 @@
     width: {{ qr_size_mm }}mm;
     height: {{ qr_size_mm }}mm;
     margin: auto;
-    image-rendering: -webkit-optimize-contrast;
-    image-rendering: crisp-edges;
-    image-rendering: pixelated;
-    /* Ensure sharp edges for print */
 }
 
 .qr-id {
-    font-size: {{ font_size_id }}pt;
+    font-size: 11pt;
     font-weight: bold;
     text-align: left;
 }
 
 .qr-name {
-    font-size: {{ font_size_name }}pt;
+    font-size: 12pt;
     font-weight: bold;
 }
 
 .badge {
-    font-size: {{ font_size_badge }}pt;
+    font-size: 10pt;
     background: #f0f0f0;
     padding: 2px 8px;
     border: 1px solid black;
@@ -89,16 +85,6 @@
     body { margin: 0; }
     .container { width: 100%; max-width: none; margin: 0; padding: 0; }
     .print-area { padding: 15mm; }
-    
-    /* HD QR code rendering for print */
-    .qr-image {
-        image-rendering: -webkit-optimize-contrast !important;
-        image-rendering: crisp-edges !important;
-        image-rendering: pixelated !important;
-        /* Force high-quality rendering */
-        -webkit-print-color-adjust: exact !important;
-        print-color-adjust: exact !important;
-    }
 }
 </style>
 {% endblock %}

@@ -7,7 +7,7 @@ from qr_manager.models import QRCodeImage
 from transactions.models import Transaction
 from personnel.models import Personnel
 from inventory.models import Item
-from .print_config import QR_SIZE_MM, CARDS_PER_ROW, CARD_WIDTH_MM, CARD_HEIGHT_MM, FONT_SIZE_ID, FONT_SIZE_NAME, FONT_SIZE_BADGE
+from .print_config import QR_SIZE_MM, CARDS_PER_ROW, CARD_WIDTH_MM, CARD_HEIGHT_MM
 
 
 @login_required
@@ -41,9 +41,6 @@ def print_qr_codes(request):
         'cards_per_row': CARDS_PER_ROW,
         'card_width_mm': CARD_WIDTH_MM,
         'card_height_mm': CARD_HEIGHT_MM,
-        'font_size_id': FONT_SIZE_ID,
-        'font_size_name': FONT_SIZE_NAME,
-        'font_size_badge': FONT_SIZE_BADGE,
     }
     return render(request, 'print_handler/print_qr_codes.html', context)
 
@@ -58,9 +55,6 @@ def print_single_qr(request, qr_id):
         'qr_size_mm': QR_SIZE_MM,
         'card_width_mm': CARD_WIDTH_MM,
         'card_height_mm': CARD_HEIGHT_MM,
-        'font_size_id': FONT_SIZE_ID,
-        'font_size_name': FONT_SIZE_NAME,
-        'font_size_badge': FONT_SIZE_BADGE,
     }
     return render(request, 'print_handler/print_single_qr.html', context)
 

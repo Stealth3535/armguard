@@ -39,11 +39,11 @@
 }
 
 .qr-image img {
-    width: 180px;
-    height: 180px;
+    width: 1cm;
+    height: 1cm;
     object-fit: contain;
     border: 1px solid #ddd;
-    padding: 5px;
+    padding: 2px;
     background: #fafafa;
 }
 
@@ -65,6 +65,12 @@
 
 /* Print-specific styles */
 @media print {
+    /* A4 page settings */
+    @page {
+        size: A4;
+        margin: 1cm;
+    }
+
     /* Hide non-printable elements */
     .no-print,
     .navbar,
@@ -80,6 +86,7 @@
         color: black !important;
         margin: 0;
         padding: 0;
+        font-size: 12pt;
     }
 
     .container {
@@ -88,11 +95,38 @@
         padding: 0;
     }
 
+    /* QR Code exact print size - 1cm x 1cm (28px) */
+    .qr-image img {
+        width: 28px !important;
+        height: 28px !important;
+        max-width: 28px !important;
+        max-height: 28px !important;
+        min-width: 28px !important;
+        min-height: 28px !important;
+        padding: 0 !important;
+        margin: 1px !important;
+        object-fit: contain !important;
+        display: block !important;
+        box-sizing: border-box !important;
+    }
+
+    /* Override template inline styles for QR images */
+    .qr-image img,
+    .print-section .qr-image img,
+    div .qr-image img {
+        width: 28px !important;
+        height: 28px !important;
+        max-width: 28px !important;
+        max-height: 28px !important;
+    }
+
     /* QR Card print styles */
     .qr-card {
-        border: 2px solid #000;
+        border: 1px solid #000;
         page-break-inside: avoid;
         break-inside: avoid;
+        padding: 5px;
+        margin: 2px;
     }
 
     /* Force black borders */
@@ -105,9 +139,12 @@
         page-break-after: always;
     }
 
-    /* Ensure proper page margins */
-    @page {
-        margin: 1cm;
+    /* Global QR image override for all QR codes */
+    img[src*="qr_codes"] {
+        width: 28px !important;
+        height: 28px !important;
+        max-width: 28px !important;
+        max-height: 28px !important;
     }
 }
 

@@ -90,7 +90,6 @@ def get_personnel_from_qr(qr_data):
                 'full_name': personnel.get_full_name(),
                 'rank': personnel.rank,
                 'serial': personnel.serial,
-                'badge_number': personnel.badge_number,
                 'office': personnel.office,
                 'status': personnel.status,
             },
@@ -127,7 +126,6 @@ def get_item_from_qr(qr_data):
                 'status': item.status,
                 'condition': item.condition,
                 'description': item.description or '',
-                'location': item.location or '',
             },
             'error': None
         }
@@ -163,7 +161,6 @@ def get_personnel_by_id(personnel_id):
                 'full_name': personnel.get_full_name(),
                 'rank': personnel.rank,
                 'serial': personnel.serial,
-                'badge_number': personnel.badge_number,
                 'office': personnel.office,
                 'status': personnel.status,
             },
@@ -200,7 +197,6 @@ def get_item_by_id(item_id):
                 'status': item.status,
                 'condition': item.condition,
                 'description': item.description or '',
-                'location': item.location or '',
             },
             'error': None
         }

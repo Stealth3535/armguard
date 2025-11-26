@@ -1,0 +1,359 @@
+{% extends "base.html" %}
+
+{% block title %}Print Handler - ArmGuard{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="page-header">
+        <h1 class="page-title">🖨️ Print Handler</h1>
+        <p class="text-muted">Configure and manage QR code printing settings from <code>{{ config_file_path }}</code></p>
+    </div>
+
+    <!-- Validation Messages -->
+    {% if validation %}
+        {% if validation.errors %}
+        <div class="alert alert-danger">
+            <h5>❌ Configuration Errors:</h5>
+            <ul class="mb-0">
+                {% for error in validation.errors %}
+                <li>{{ error }}</li>
+                {% endfor %}
+            </ul>
+        </div>
+        {% endif %}
+        
+        {% if validation.warnings %}
+        <div class="alert alert-warning">
+            <h5>⚠️ Configuration Warnings:</h5>
+            <ul class="mb-0">
+                {% for warning in validation.warnings %}
+                <li>{{ warning }}</li>
+                {% endfor %}
+            </ul>
+        </div>
+        {% endif %}
+        
+        {% if validation.valid and not validation.warnings %}
+        <div class="alert alert-success">
+            <h5>✅ Configuration Valid</h5>
+            <p class="mb-0">Your print configuration is properly set up and ready to use.</p>
+        </div>
+        {% endif %}
+    {% endif %}
+
+    <div class="row">
+        <!-- Current Configuration -->
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header">
+                    <h3>📋 Current Settings</h3>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <h5>📄 Paper & Layout</h5>
+                            <ul class="list-group list-group-flush">
+                                <li class="list-group-item d-flex justify-content-between">
+                                    <strong>Paper Size:</strong>
+                                    <span>{{ config.paper_size }}</span>
+                                </li>
+                                <li class="list-group-item d-flex justify-content-between">
+                                    <strong>Page Margin:</strong>
+                                    <span>{{ config.page_margin_mm }}mm</span>
+                                </li>
+                                <li class="list-group-item d-flex justify-content-between">
+                                    <strong>Cards per Row:</strong>
+                                    <span>{{ config.cards_per_row }}</span>
+                                </li>
+                                <li class="list-group-item d-flex justify-content-between">
+                                    <strong>Horizontal Gap:</strong>
+                                    <span>{{ config.horizontal_gap_mm }}mm</span>
+                                </li>
+                                <li class="list-group-item d-flex justify-content-between">
+                                    <strong>Vertical Gap:</strong>
+                                    <span>{{ config.vertical_gap_mm }}mm</span>
+                                </li>
+                            </ul>
+                        </div>
+                        <div class="col-md-6">
+                            <h5>🔲 QR Code & Cards</h5>
+                            <ul class="list-group list-group-flush">
+                                <li class="list-group-item d-flex justify-content-between">
+                                    <strong>QR Code Size:</strong>
+                                    <span>{{ config.qr_size_mm }}mm</span>
+                                </li>
+                                <li class="list-group-item d-flex justify-content-between">
+                                    <strong>Card Width:</strong>
+                                    <span>{{ config.card_width_mm }}mm</span>
+                                </li>
+                                <li class="list-group-item d-flex justify-content-between">
+                                    <strong>Card Height:</strong>
+                                    <span>{{ config.card_height_mm }}mm</span>
+                                </li>
+                                <li class="list-group-item d-flex justify-content-between">
+                                    <strong>Card Padding:</strong>
+                                    <span>{{ config.card_padding_mm }}mm</span>
+                                </li>
+                            </ul>
+                            
+                            <h5 class="mt-4">🔤 Typography</h5>
+                            <ul class="list-group list-group-flush">
+                                <li class="list-group-item d-flex justify-content-between">
+                                    <strong>ID Font Size:</strong>
+                                    <span>{{ config.font_size_id }}pt</span>
+                                </li>
+                                <li class="list-group-item d-flex justify-content-between">
+                                    <strong>Name Font Size:</strong>
+                                    <span>{{ config.font_size_name }}pt</span>
+                                </li>
+                                <li class="list-group-item d-flex justify-content-between">
+                                    <strong>Badge Font Size:</strong>
+                                    <span>{{ config.font_size_badge }}pt</span>
+                                </li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Layout Calculation -->
+            {% if layout %}
+            <div class="card mt-4">
+                <div class="card-header">
+                    <h4>📐 Calculated Layout</h4>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <strong>Page Dimensions:</strong>
+                            <ul class="list-unstyled mt-2">
+                                <li>📄 Paper: {{ config.paper_size }}</li>
+                                <li>📏 Usable Area: Available after margins</li>
+                                <li>🔢 Rows per Page: {{ layout.rows_per_page }}</li>
+                            </ul>
+                        </div>
+                        <div class="col-md-6">
+                            <strong>Card Layout:</strong>
+                            <ul class="list-unstyled mt-2">
+                                <li>📐 Cards fit: {{ config.cards_per_row }} × {{ layout.rows_per_page }}</li>
+                                <li>📊 Total per page: {{ config.cards_per_row|mul:layout.rows_per_page }}</li>
+                                <li>🎯 QR to Card ratio: Good fit</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- Control Panel -->
+        <div class="col-md-4">
+            <!-- Quick Presets -->
+            <div class="card">
+                <div class="card-header">
+                    <h4>⚡ Quick Presets</h4>
+                </div>
+                <div class="card-body">
+                    {% for preset in available_presets %}
+                    <button class="btn btn-outline-primary btn-block mb-2" onclick="applyPreset('{{ preset }}')">
+                        📋 Apply {{ preset|title }} Layout
+                    </button>
+                    {% endfor %}
+                    
+                    <div id="preset-status" class="mt-3"></div>
+                    
+                    <div class="alert alert-info mt-3">
+                        <small>
+                            <strong>Note:</strong> After applying a preset, restart the Django server to see changes.
+                        </small>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Manual Edit Instructions -->
+            <div class="card mt-4">
+                <div class="card-header">
+                    <h4>📝 Manual Edit</h4>
+                </div>
+                <div class="card-body">
+                    <ol>
+                        <li>Open <code>{{ config_file_path }}</code></li>
+                        <li>Edit the values at the top of the file</li>
+                        <li>Save the file</li>
+                        <li>Restart Django server</li>
+                        <li>Changes apply to both print and PDF</li>
+                    </ol>
+                    
+                    <h5 class="mt-4">🎯 Quick Examples:</h5>
+                    
+                    <div class="alert alert-info">
+                        <strong>For 1cm QR codes:</strong><br>
+                        <code>QR_SIZE_MM = 10</code>
+                    </div>
+                    
+                    <div class="alert alert-success">
+                        <strong>For compact layout:</strong><br>
+                        <code>CARDS_PER_ROW = 4</code><br>
+                        <code>CARD_WIDTH_MM = 50</code>
+                    </div>
+                    
+                    <div class="alert alert-warning">
+                        <strong>For large cards:</strong><br>
+                        <code>QR_SIZE_MM = 50</code><br>
+                        <code>CARDS_PER_ROW = 1</code>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Quick Actions -->
+            <div class="card mt-4">
+                <div class="card-header">
+                    <h4>🚀 Quick Actions</h4>
+                </div>
+                <div class="card-body">
+                    <a href="{% url 'print_handler:print_qr_codes' %}" class="btn btn-primary btn-block mb-2">
+                        🖨️ Print QR Codes
+                    </a>
+                    <a href="{% url 'print_handler:generate_qr_pdf' %}" class="btn btn-outline-primary btn-block mb-2">
+                        📄 Generate PDF
+                    </a>
+                    <a href="{% url 'print_handler:config_css' %}" class="btn btn-outline-secondary btn-block" target="_blank">
+                        📱 View CSS Variables
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+async function applyPreset(presetName) {
+    const statusDiv = document.getElementById('preset-status');
+    statusDiv.innerHTML = `<div class="alert alert-info">Applying ${presetName} preset...</div>`;
+    
+    try {
+        const response = await fetch('{% url "print_handler:print_config" %}', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded',
+                'X-CSRFToken': '{{ csrf_token }}',
+            },
+            body: `preset=${presetName}`
+        });
+        
+        const result = await response.json();
+        
+        if (result.success) {
+            statusDiv.innerHTML = `
+                <div class="alert alert-success">
+                    <strong>✅ ${result.message}</strong>
+                    <br><small>Applied values: ${Object.entries(result.applied_values).map(([k,v]) => `${k}=${v}`).join(', ')}</small>
+                </div>
+            `;
+            
+            // Auto refresh after 3 seconds
+            setTimeout(() => {
+                statusDiv.innerHTML += `
+                    <div class="alert alert-warning">
+                        <strong>⚠️ Restart Required</strong>
+                        <br>Restart Django server: <code>Ctrl+C</code> then <code>python manage.py runserver</code>
+                    </div>
+                `;
+            }, 3000);
+        } else {
+            statusDiv.innerHTML = `
+                <div class="alert alert-danger">
+                    <strong>❌ Error:</strong> ${result.error}
+                </div>
+            `;
+        }
+    } catch (error) {
+        statusDiv.innerHTML = `
+            <div class="alert alert-danger">
+                <strong>❌ Error:</strong> Failed to apply preset
+            </div>
+        `;
+    }
+}
+</script>
+
+<style>
+    .page-header {
+        border-bottom: 1px solid #e9ecef;
+        margin-bottom: 2rem;
+        padding-bottom: 1rem;
+    }
+    
+    .card {
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        border: none;
+    }
+    
+    .card-header {
+        background-color: #f8f9fa;
+        border-bottom: 1px solid #e9ecef;
+    }
+    
+    .list-group-item {
+        border-left: none;
+        border-right: none;
+        padding: 0.75rem 0;
+    }
+    
+    .list-group-item:first-child {
+        border-top: none;
+    }
+    
+    .list-group-item:last-child {
+        border-bottom: none;
+    }
+    
+    h5 {
+        color: #495057;
+        font-weight: 600;
+        margin-bottom: 15px;
+        margin-top: 20px;
+    }
+    
+    h5:first-child {
+        margin-top: 0;
+    }
+    
+    .alert {
+        border: none;
+        border-left: 4px solid;
+    }
+    
+    .alert-info {
+        border-left-color: #17a2b8;
+    }
+    
+    .alert-success {
+        border-left-color: #28a745;
+    }
+    
+    .alert-warning {
+        border-left-color: #ffc107;
+    }
+    
+    .alert-danger {
+        border-left-color: #dc3545;
+    }
+    
+    code {
+        background: #f8f9fa;
+        padding: 2px 4px;
+        border-radius: 3px;
+        font-size: 0.9em;
+    }
+    
+    .btn-outline-primary:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    
+    #preset-status {
+        min-height: 20px;
+    }
+</style>
+{% endblock %}
