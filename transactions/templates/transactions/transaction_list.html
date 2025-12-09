@@ -228,7 +228,7 @@
     <!-- Transaction Form (Inline) -->
     <div class="transaction-form">
         <h3>📝 Create Transaction</h3>
-        <form id="transactionForm">
+        <form id="transactionForm" onsubmit="return false;">
             {% csrf_token %}
             
             <!-- Personnel Input -->
@@ -258,8 +258,6 @@
                     <option value="Duty Security">Duty Security</option>
                     <option value="Vigil">Vigil</option>
                     <option value="Guard Duty">Guard Duty</option>
-                    <option value="Patrol">Patrol</option>
-                    <option value="Training">Training</option>
                 </select>
             </div>
 
@@ -288,7 +286,7 @@
             </div>
 
             <!-- Submit Button -->
-            <button type="submit" class="btn-submit-transaction">✅ Submit Transaction</button>
+            <button type="button" class="btn-submit-transaction" onclick="handleManualSubmit()">✅ Submit Transaction</button>
         </form>
     </div>
 
@@ -494,6 +492,9 @@ personnelInput.addEventListener('blur', async function() {
             personnelInfo.className = 'info-text success';
             personnelInfo.textContent = `✓ ${data.firstname} ${data.middle_initial ? data.middle_initial + '.' : ''} ${data.surname} - ${data.rank}`;
             personnelInfo.style.display = 'block';
+            
+            // Show automatic notification for successful personnel scan
+            showNotification(`Personnel scanned: ${data.firstname} ${data.surname} - ${data.rank}`, 'success');
         } else {
             personnelInfo.className = 'info-text error';
             personnelInfo.textContent = '✗ Personnel not found';
@@ -560,22 +561,76 @@ itemInput.addEventListener('blur', async function() {
     }
 });
 
-// Form submission
-document.getElementById('transactionForm').addEventListener('submit', async function(e) {
+// Prevent any automatic form submission
+document.getElementById('transactionForm').addEventListener('submit', function(e) {
     e.preventDefault();
-    const personnelId = personnelInput.value.trim();
-    const itemId = itemInput.value.trim();
-    const action = actionSelect.value;
-    const mode = modeSelect.value;
+    console.log('Automatic form submission prevented');
+    return false;
+});
+
+// Add Enter key prevention for all form inputs
+document.querySelectorAll('#transactionForm input, #transactionForm select, #transactionForm textarea').forEach(element => {
+    element.addEventListener('keydown', function(e) {
+        if (e.key === 'Enter') {
+            e.preventDefault();
+            console.log('Enter key submission prevented');
+            return false;
+        }
+    });
+});
+
+// Manual submit handler - only called when button is clicked
+function handleManualSubmit() {
+    const mode = document.getElementById('modeSelect').value;
+    console.log('Manual submit triggered in mode:', mode);
+    
+    // In normal mode, always require explicit user action
+    if (mode === 'normal') {
+        submitTransaction();
+    } else if (mode === 'defcon') {
+        // Defcon mode might have different behavior in the future
+        submitTransaction();
+    }
+}
+
+// Actual transaction submission function
+async function submitTransaction() {
+    console.log('Submitting transaction...'); // Debug log
+    
+    // Get form values
+    const personnelId = document.getElementById('personnelInput').value.trim();
+    const itemId = document.getElementById('itemInput').value.trim();
+    const action = document.getElementById('actionSelect').value;
+    const mode = document.getElementById('modeSelect').value;
     const notes = document.getElementById('notes').value.trim();
     const dutyType = document.getElementById('dutyType').value;
     const mags = document.getElementById('mags').value;
     const rounds = document.getElementById('rounds').value;
 
+    // Validate required fields - show inline error instead of popup
     if (!personnelId || !itemId) {
-        alert('Please enter both Personnel ID and Item ID');
+        // Show inline error message instead of popup
+        let errorDiv = document.getElementById('form-error');
+        if (!errorDiv) {
+            errorDiv = document.createElement('div');
+            errorDiv.id = 'form-error';
+            errorDiv.style.cssText = 'background: #f8d7da; color: #721c24; padding: 10px; border: 1px solid #f5c6cb; border-radius: 4px; margin: 10px 0;';
+            document.getElementById('transactionForm').insertBefore(errorDiv, document.querySelector('.btn-submit-transaction'));
+        }
+        errorDiv.textContent = 'Please enter both Personnel ID and Item ID before submitting.';
+        errorDiv.style.display = 'block';
+        
+        // Hide error after 5 seconds
+        setTimeout(() => {
+            if (errorDiv) errorDiv.style.display = 'none';
+        }, 5000);
+        
         return;
     }
+    
+    // Hide any existing error
+    const existingErrorDiv = document.getElementById('form-error');
+    if (existingErrorDiv) existingErrorDiv.style.display = 'none';
 
     try {
         const response = await fetch('/api/transactions/', {
@@ -596,16 +651,16 @@ document.getElementById('transactionForm').addEventListener('submit', async func
         });
         
         if (response.ok) {
-            alert('Transaction successful!');
+            showNotification('Transaction successful!', 'success');
             location.reload();
         } else {
             const error = await response.json();
-            alert('Transaction failed: ' + (error.error || 'Unknown error'));
+            showNotification('Transaction failed: ' + (error.error || 'Unknown error'), 'error');
         }
     } catch (error) {
-        alert('Transaction failed: ' + error.message);
+        showNotification('Transaction failed: ' + error.message, 'error');
     }
-});
+}
 
 // Filter functionality for transaction tables
 const searchInput = document.getElementById('searchInput');
@@ -665,5 +720,54 @@ searchInput.addEventListener('input', filterTransactions);
 actionFilter.addEventListener('change', filterTransactions);
 dutyFilterDropdown.addEventListener('change', filterTransactions);
 itemTypeFilter.addEventListener('change', filterTransactions);
+
+// Notification system
+function showNotification(message, type = 'info') {
+    // Create notification element
+    const notification = document.createElement('div');
+    notification.style.cssText = `
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        padding: 15px 20px;
+        border-radius: 8px;
+        color: white;
+        font-weight: bold;
+        z-index: 10000;
+        max-width: 400px;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+        transform: translateX(100%);
+        transition: transform 0.3s ease;
+    `;
+    
+    // Set background color based on type
+    if (type === 'success') {
+        notification.style.background = '#28a745';
+    } else if (type === 'error') {
+        notification.style.background = '#dc3545';
+    } else {
+        notification.style.background = '#007bff';
+    }
+    
+    notification.textContent = message;
+    
+    // Add to page
+    document.body.appendChild(notification);
+    
+    // Animate in
+    setTimeout(() => {
+        notification.style.transform = 'translateX(0)';
+    }, 100);
+    
+    // Auto-remove after 3 seconds
+    setTimeout(() => {
+        notification.style.transform = 'translateX(100%)';
+        setTimeout(() => {
+            if (notification.parentNode) {
+                document.body.removeChild(notification);
+            }
+        }, 300);
+    }, 3000);
+}
 </script>
 {% endblock %}

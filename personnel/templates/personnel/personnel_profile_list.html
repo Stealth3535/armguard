@@ -1,10 +1,68 @@
 {% extends 'base.html' %}
 {% load static %}
 
-{% block title %}Personnel Directory{% endblock %}
+{% block title %}Personnel Directory - ArmGuard{% endblock %}
 
 {% block extra_css %}
-<link rel="stylesheet" href="{% static 'personnel/personnel_profile_list.css' %}">
+<link rel="stylesheet" href="{% static 'personnel/personnel_profile_list.css' %}?v={{ timestamp }}">
+<style>
+    .view-btn {
+        padding: 0.25rem 0.75rem;
+        background: #007bff;
+        color: white;
+        border-radius: 0.25rem;
+        text-decoration: none;
+        font-size: 0.875rem;
+        transition: all 0.3s;
+    }
+    
+    .view-btn:hover {
+        background: #0056b3;
+        color: white;
+        text-decoration: none;
+        transform: translateY(-1px);
+    }
+    
+    .user-linked {
+        color: #00b894;
+    }
+    
+    .user-unlinked {
+        color: #e17055;
+    }
+    
+    /* Force consistent ACTIVE badge styling - highest specificity */
+    .personnel-card .badge-active,
+    .personnel-card span.badge.badge-active,
+    .badge.badge-active,
+    span.badge-active,
+    .badge:contains("ACTIVE"),
+    span[class*="badge"]:contains("ACTIVE") {
+        background-color: #d4edda !important;
+        color: #155724 !important;
+        border: none !important;
+    }
+    
+    /* Override any Bootstrap or framework badge styles */
+    .badge,
+    .badge-secondary,
+    .badge-danger,
+    .badge-primary {
+        background-color: inherit;
+        color: inherit;
+    }
+    
+    /* Specific override for active status */
+    .badge-active {
+        background-color: #d4edda !important;
+        color: #155724 !important;
+    }
+    
+    /* Debug styling to see what's happening */
+    .personnel-card .badge {
+        border: 1px solid #000 !important;
+    }
+</style>
 {% endblock %}
 
 {% block content %}
@@ -13,31 +71,32 @@
     <div class="page-header">
         <div>
             <h1 class="page-title">Personnel Directory</h1>
-            <p class="page-subtitle">{{ personnel_list|length }} Personnel Records</p>
+            <p class="page-subtitle">{{ total_count }} Personnel Records</p>
         </div>
     </div>
 
     <!-- Search Bar -->
     <div class="search-bar">
-        <input type="text" id="searchInput" class="search-input" placeholder="🔍 Search by name, rank, serial, or office...">
+        <form method="get" style="display: flex; gap: 1rem; align-items: center;">
+            {{ search_form.search_query }}
+            <button type="submit" class="btn btn-primary">
+                <i class="fas fa-search"></i> Search
+            </button>
+            <a href="{% url 'personnel:personnel_profile_list' %}" class="btn btn-outline-secondary">
+                Clear
+            </a>
+        </form>
     </div>
 
     <!-- Filter Bar -->
     <div class="filter-bar">
-        <div class="form-group" style="margin: 0; min-width: 200px;">
-            <select id="statusFilter" class="form-control form-select">
-                <option value="">All Status</option>
-                <option value="Active">Active</option>
-                <option value="Inactive">Inactive</option>
-            </select>
-        </div>
-        <div class="form-group" style="margin: 0; min-width: 200px;">
-            <select id="rankFilter" class="form-control form-select">
-                <option value="">All Ranks</option>
-                <option value="officer">Officers</option>
-                <option value="enlisted">Enlisted</option>
-            </select>
-        </div>
+        <form method="get" style="display: flex; gap: 1rem; align-items: center;">
+            {{ search_form.status }}
+            {{ search_form.rank_type }}
+            {{ search_form.office }}
+            <button type="submit" class="btn btn-secondary">Filter</button>
+        </form>
+    </div>
         <div class="form-group" style="margin: 0; min-width: 200px;">
             <select id="officeFilter" class="form-control form-select">
                 <option value="">All Offices</option>
@@ -51,7 +110,7 @@
 
     <!-- Personnel Cards Grid -->
     <div class="grid grid-3" id="personnelGrid">
-        {% for person in personnel_list %}
+        {% for person in page_obj %}
         <div class="card personnel-card" 
              data-status="{{ person.status }}" 
              data-rank="{% if person.is_officer %}officer{% else %}enlisted{% endif %}"
@@ -81,6 +140,8 @@
                         
                         {% if person.status == 'Active' %}
                         <span class="badge badge-active">{{ person.status }}</span>
+                        {% elif person.status == 'ACTIVE' %}
+                        <span class="badge badge-active">{{ person.status }}</span>
                         {% else %}
                         <span class="badge badge-inactive">{{ person.status }}</span>
                         {% endif %}
@@ -109,50 +170,54 @@
             
             <div class="mt-2">
                 <a href="{% url 'personnel:personnel_profile_detail' person.id %}" class="btn btn-primary btn-sm" style="width: 100%;">View Details →</a>
+                
+                {% if user.is_superuser or 'Admin' in user.groups.all|join:',' %}
+                <div style="margin-top: 0.5rem;">
+                    <small class="text-muted" style="font-size: 0.7rem; display: block; text-align: center;">
+                        To edit or register personnel, use the 
+                        <a href="{% url 'armguard_admin:registration' %}" class="text-primary">Registration Form</a>
+                    </small>
+                </div>
+                {% endif %}
             </div>
         </div>
         {% empty %}
-        <div class="card" style="grid-column: 1 / -1;">
-            <p class="text-center text-muted">No personnel found.</p>
+        <div class="card" style="grid-column: 1 / -1; text-align: center; padding: 2rem;">
+            <i class="fas fa-users fa-3x text-muted mb-3"></i>
+            <h4 class="text-muted mb-2">No Personnel Found</h4>
+            <p class="text-muted mb-3">
+                {% if request.GET.search_query %}
+                    No personnel match your search criteria.
+                {% else %}
+                    No personnel records have been created yet.
+                {% endif %}
+            </p>
+            {% if user.is_superuser or 'Admin' in user.groups.all|join:',' %}
+            <a href="{% url 'armguard_admin:registration' %}" class="btn btn-primary">
+                <i class="fas fa-plus me-1"></i> Register Personnel
+            </a>
+            <br>
+            <small class="text-muted mt-2" style="display: block;">
+                Use the Registration Form to add new personnel
+            </small>
+            {% endif %}
         </div>
         {% endfor %}
     </div>
 </div>
-{% endblock %}
 
-{% block extra_js %}
 <script>
-// Search functionality
-document.getElementById('searchInput').addEventListener('input', filterPersonnel);
-document.getElementById('statusFilter').addEventListener('change', filterPersonnel);
-document.getElementById('rankFilter').addEventListener('change', filterPersonnel);
-document.getElementById('officeFilter').addEventListener('change', filterPersonnel);
-
-function filterPersonnel() {
-    const searchTerm = document.getElementById('searchInput').value.toLowerCase();
-    const statusFilter = document.getElementById('statusFilter').value;
-    const rankFilter = document.getElementById('rankFilter').value;
-    const officeFilter = document.getElementById('officeFilter').value;
-    
-    const cards = document.querySelectorAll('.personnel-card');
-    
-    cards.forEach(card => {
-        const searchData = card.getAttribute('data-search');
-        const status = card.getAttribute('data-status');
-        const rank = card.getAttribute('data-rank');
-        const office = card.getAttribute('data-office');
-        
-        const matchesSearch = searchData.includes(searchTerm);
-        const matchesStatus = !statusFilter || status === statusFilter;
-        const matchesRank = !rankFilter || rank === rankFilter;
-        const matchesOffice = !officeFilter || office === officeFilter;
-        
-        if (matchesSearch && matchesStatus && matchesRank && matchesOffice) {
-            card.style.display = 'block';
-        } else {
-            card.style.display = 'none';
+document.addEventListener('DOMContentLoaded', function() {
+    // Force all ACTIVE badges to have consistent styling
+    const allBadges = document.querySelectorAll('.badge');
+    allBadges.forEach(function(badge) {
+        if (badge.textContent.trim() === 'ACTIVE' || badge.textContent.trim() === 'Active') {
+            badge.style.setProperty('background-color', '#d4edda', 'important');
+            badge.style.setProperty('color', '#155724', 'important');
+            badge.style.setProperty('border', 'none', 'important');
+            console.log('Fixed badge:', badge.textContent, badge);
         }
     });
-}
+});
 </script>
 {% endblock %}

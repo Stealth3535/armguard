@@ -43,7 +43,7 @@ INSTALLED_APPS = [
     'axes',  # Failed login attempt tracking
     # ArmGuard Apps
     'core',  # Added to register template tags
-    'admin.apps.CustomAdminConfig',
+    'admin.apps.AdminConfig',
     'users',
     'personnel',
     'inventory',

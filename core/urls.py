@@ -18,7 +18,7 @@ urlpatterns = [
     path(f'{ADMIN_URL}/', admin.site.urls),
     
     # Custom Admin (Staff users)
-    path('admin/', include('admin.urls', namespace='custom_admin')),
+    path('admin/', include('admin.urls', namespace='armguard_admin')),
     
     # Authentication
     path('', views.dashboard, name='dashboard'),

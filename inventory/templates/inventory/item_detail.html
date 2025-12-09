@@ -55,15 +55,24 @@
                 <div class="detail-label">Status</div>
                 <div class="detail-value">
                     {% if item.status == 'Available' %}
-                    <span class="badge badge-available">{{ item.status }}</span>
+                        <span class="badge badge-available">{{ item.status }}</span>
                     {% elif item.status == 'Issued' %}
-                    <span class="badge badge-issued">{{ item.status }}</span>
+                        <span class="badge badge-issued">{{ item.status }}</span>
+                        {# Show to whom it was issued #}
+                        {% with last_take=item.transactions.filter(action='Take').order_by('-date_time').first %}
+                            {% if last_take and (not item.transactions.filter(action='Return', date_time__gt=last_take.date_time).exists()) %}
+                                <span style="margin-left: 10px; color: #555; font-size: 0.95em;">
+                                    to <strong>{{ last_take.personnel.get_full_name }}</strong>
+                                    <small class="text-muted">({{ last_take.personnel.rank }})</small>
+                                </span>
+                            {% endif %}
+                        {% endwith %}
                     {% elif item.status == 'Maintenance' %}
-                    <span class="badge badge-maintenance">{{ item.status }}</span>
+                        <span class="badge badge-maintenance">{{ item.status }}</span>
                     {% else %}
-                    <span class="badge badge-inactive">{{ item.status }}</span>
+                        <span class="badge badge-inactive">{{ item.status }}</span>
                     {% endif %}
-                    
+
                     {% if item.status != 'Issued' and user.is_staff %}
                     <div class="status-dropdown" style="display: inline-block; margin-left: 10px;">
                         <button class="status-btn" onclick="toggleStatusDropdown(event)">

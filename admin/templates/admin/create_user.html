@@ -158,22 +158,6 @@
         <div class="form-section" id="accountSection">
             <h2>Account Information</h2>
             
-            {% if is_edit %}
-            <div class="form-group">
-                {{ form.existing_personnel.errors }}
-                <label for="{{ form.existing_personnel.id_for_label }}">{{ form.existing_personnel.label }}</label>
-                {{ form.existing_personnel }}
-                {% if form.existing_personnel.help_text %}
-                <p class="help-text">{{ form.existing_personnel.help_text }}</p>
-                {% endif %}
-                {% if personnel %}
-                <p class="help-text" style="color: #059669;">Currently linked to: <strong>{{ personnel.get_full_name }} ({{ personnel.id }})</strong></p>
-                {% else %}
-                <p class="help-text" style="color: #dc2626;">No personnel linked. Select one above or fill in personnel details below.</p>
-                {% endif %}
-            </div>
-            {% endif %}
-            
             <div class="form-group" id="usernameGroup">
                 {{ form.username.errors }}
                 <label for="{{ form.username.id_for_label }}">{{ form.username.label }} *</label>
@@ -206,69 +190,56 @@
         </div>
         
         <div class="form-section">
-            <h2>Personnel Information</h2>
+            <h2>Personal Information</h2>
             
             <div class="form-group">
-                {{ form.surname.errors }}
-                <label for="{{ form.surname.id_for_label }}">{{ form.surname.label }} *</label>
-                {{ form.surname }}
+                {{ form.first_name.errors }}
+                <label for="{{ form.first_name.id_for_label }}">First Name *</label>
+                {{ form.first_name }}
             </div>
             
             <div class="form-group">
-                {{ form.firstname.errors }}
-                <label for="{{ form.firstname.id_for_label }}">{{ form.firstname.label }} *</label>
-                {{ form.firstname }}
+                {{ form.last_name.errors }}
+                <label for="{{ form.last_name.id_for_label }}">Last Name *</label>
+                {{ form.last_name }}
             </div>
             
             <div class="form-group">
-                {{ form.middle_initial.errors }}
-                <label for="{{ form.middle_initial.id_for_label }}">{{ form.middle_initial.label }}</label>
-                {{ form.middle_initial }}
+                {{ form.department.errors }}
+                <label for="{{ form.department.id_for_label }}">Department</label>
+                {{ form.department }}
             </div>
             
             <div class="form-group">
-                {{ form.rank.errors }}
-                <label for="{{ form.rank.id_for_label }}">{{ form.rank.label }} *</label>
-                {{ form.rank }}
+                {{ form.phone_number.errors }}
+                <label for="{{ form.phone_number.id_for_label }}">Phone Number</label>
+                {{ form.phone_number }}
             </div>
             
             <div class="form-group">
-                {{ form.serial.errors }}
-                <label for="{{ form.serial.id_for_label }}">{{ form.serial.label }} *</label>
-                {{ form.serial }}
-                {% if form.serial.help_text %}
-                <p class="help-text">{{ form.serial.help_text }}</p>
-                {% endif %}
+                {{ form.badge_number.errors }}
+                <label for="{{ form.badge_number.id_for_label }}">Badge Number</label>
+                {{ form.badge_number }}
             </div>
             
             <div class="form-group">
-                {{ form.office.errors }}
-                <label for="{{ form.office.id_for_label }}">{{ form.office.label }} *</label>
-                {{ form.office }}
+                {{ form.profile_picture.errors }}
+                <label for="{{ form.profile_picture.id_for_label }}">Profile Picture</label>
+                {{ form.profile_picture }}
+                <p class="help-text">Upload a profile picture (JPG, PNG, or GIF format)</p>
             </div>
             
             <div class="form-group">
-                {{ form.tel.errors }}
-                <label for="{{ form.tel.id_for_label }}">{{ form.tel.label }} *</label>
-                {{ form.tel }}
-                {% if form.tel.help_text %}
-                <p class="help-text">{{ form.tel.help_text }}</p>
-                {% endif %}
-            </div>
-            
-            <div class="form-group">
-                {{ form.picture.errors }}
-                <label for="{{ form.picture.id_for_label }}">{{ form.picture.label }}</label>
-                {{ form.picture }}
-                {% if is_edit and personnel and personnel.picture %}
-                <p class="help-text">Current: {{ personnel.picture.name }}</p>
-                {% endif %}
+                {{ form.is_active.errors }}
+                <label for="{{ form.is_active.id_for_label }}">
+                    {{ form.is_active }} Active User
+                </label>
             </div>
         </div>
         
         <div class="form-actions">
             <button type="submit" class="btn btn-primary" id="submitBtn">{% if is_edit %}Update User{% else %}Register User{% endif %}</button>
-            <a href="{% url 'custom_admin:user_management' %}" class="btn btn-secondary">Cancel</a>
+            <a href="{% url 'armguard_admin:user_management' %}" class="btn btn-secondary">Cancel</a>
         </div>
     </form>
 </div>
@@ -313,8 +284,8 @@ document.addEventListener('DOMContentLoaded', function() {
             
             // Show notice
             roleNotice.classList.remove('hidden');
-            roleNoticeText.textContent = 'Personnel: No login credentials needed. Only personnel profile will be created.';
-            submitBtn.textContent = isEdit ? 'Update Personnel' : 'Register Personnel';
+            roleNoticeText.textContent = 'Personnel: Create personnel record without user account. Use personnel management for this.';
+            submitBtn.textContent = isEdit ? 'Update User' : 'Register User';
         } else if (role === 'admin') {
             // Show all fields for admin
             accountSection.classList.remove('hidden');

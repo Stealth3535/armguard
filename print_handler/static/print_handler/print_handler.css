@@ -110,16 +110,6 @@
         box-sizing: border-box !important;
     }
 
-    /* Override template inline styles for QR images */
-    .qr-image img,
-    .print-section .qr-image img,
-    div .qr-image img {
-        width: 28px !important;
-        height: 28px !important;
-        max-width: 28px !important;
-        max-height: 28px !important;
-    }
-
     /* QR Card print styles */
     .qr-card {
         border: 1px solid #000;

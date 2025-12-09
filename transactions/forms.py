@@ -180,8 +180,6 @@ class TransactionFilterForm(forms.Form):
             ('Duty Security', 'Duty Security'),
             ('Vigil', 'Vigil'),
             ('Guard Duty', 'Guard Duty'),
-            ('Patrol', 'Patrol'),
-            ('Training', 'Training'),
         ],
         widget=forms.Select(attrs={
             'class': 'form-control form-select',

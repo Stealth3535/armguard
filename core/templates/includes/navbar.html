@@ -12,7 +12,7 @@
             <li><a href="{% url 'transactions:list' %}" class="{% if request.path|slice:':14' == '/transactions/' %}active{% endif %}">Transactions</a></li>
             <li><a href="{% url 'qr_manager:personnel_qr_codes' %}" class="{% if request.path|slice:':4' == '/qr/' %}active{% endif %}">QR Codes</a></li>
             {% if user.is_staff %}
-            <li><a href="{% url 'custom_admin:dashboard' %}" class="{% if request.path|slice:':7' == '/admin/' %}active{% endif %}">Admin</a></li>
+            <li><a href="{% url 'armguard_admin:dashboard' %}" class="{% if request.path|slice:':7' == '/admin/' %}active{% endif %}">Admin</a></li>
             {% endif %}
         </ul>
     </div>

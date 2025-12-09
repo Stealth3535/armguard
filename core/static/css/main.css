@@ -364,8 +364,8 @@ body {
 }
 
 .badge-active, .badge-available {
-    background-color: #d4edda;
-    color: #0f59ad;
+    background-color: #d4edda !important;
+    color: #155724 !important;
 }
 
 .badge-inactive, .badge-retired {

@@ -94,6 +94,16 @@ class Transaction(models.Model):
         # Validate transaction before saving
         if is_new:
             if self.action == self.ACTION_TAKE:
+                # Item cannot be taken — personnel already has an issued item
+                current_issued_items = Item.objects.filter(status=Item.STATUS_ISSUED)
+                for item in current_issued_items:
+                    # Check if this item was last taken by this personnel
+                    last_transaction = item.transactions.order_by('-date_time').first()
+                    if (last_transaction and 
+                        last_transaction.action == self.ACTION_TAKE and 
+                        last_transaction.personnel == self.personnel):
+                        raise ValueError(f"Item cannot be taken — personnel {self.personnel} already has an issued item: {item}")
+                
                 # Cannot take item that's already issued
                 if self.item.status == Item.STATUS_ISSUED:
                     raise ValueError(f"Cannot take item {self.item.id} - already issued")

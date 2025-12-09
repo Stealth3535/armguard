@@ -8,6 +8,7 @@ from PIL import Image
 from io import BytesIO
 
 
+
 def generate_qr_code(data, output_path=None, size=600):
 	"""
 	Generate a HIGH-RESOLUTION QR code image for crisp printing.
@@ -36,8 +37,8 @@ def generate_qr_code(data, output_path=None, size=600):
 	qr.add_data(data)
 	qr.make(fit=True)
 	
-	# Create image with pure black and white colors for crisp printing
-	img = qr.make_image(fill_color="black", back_color="white")
+	# Create image with gray QR on black background
+	img = qr.make_image(fill_color="#888888", back_color="black")
 	
 	# Resize to specified size with high-quality resampling
 	img = img.resize((size, size), Image.Resampling.LANCZOS)
